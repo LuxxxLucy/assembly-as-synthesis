@@ -1,0 +1,255 @@
+{
+  "Learning to Assemble Alternative Plans assembly sequence": [
+    {
+      "id": "http://arxiv.org/abs/2203.13733v2",
+      "title": "Blocks Assemble! Learning to Assemble with Large-Scale Structured Reinforcement Learning",
+      "authors": [
+        "Seyed Kamyar Seyed Ghasemipour",
+        "Daniel Freeman",
+        "Byron David",
+        "Shixiang Shane Gu"
+      ],
+      "summary": "Assembly of multi-part physical structures is both a valuable end product for autonomous robotics, as well as a valuable diagnostic task for open-ended training of embodied intelligent agents. We introduce a naturalistic physics-based environment with a set of connectable magnet blocks inspired by children's toy kits. The objective is to assemble blocks into a succession of target blueprints. Desp",
+      "published": "2022-03-15",
+      "pdf_url": "https://arxiv.org/pdf/2203.13733v2"
+    },
+    {
+      "id": "http://arxiv.org/abs/1609.03108v1",
+      "title": "Assembly Sequence Planning for Motion Planning",
+      "authors": [
+        "Weiwei Wan",
+        "Kensuke Harada",
+        "Kazuyuki Nagata"
+      ],
+      "summary": "This paper develops a planner to find an optimal assembly sequence to assemble several objects. The input to the planner is the mesh models of the objects, the relative poses between the objects in the assembly, and the final pose of the assembly. The output is an optimal assembly sequence, namely (1) in which order should one assemble the objects, (2) from which directions should the objects be d",
+      "published": "2016-09-11",
+      "pdf_url": "https://arxiv.org/pdf/1609.03108v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2409.13620v1",
+      "title": "Subassembly to Full Assembly: Effective Assembly Sequence Planning through Graph-based Reinforcement Learning",
+      "authors": [
+        "Chang Shu",
+        "Anton Kim",
+        "Shinkyu Park"
+      ],
+      "summary": "This paper proposes an assembly sequence planning framework, named Subassembly to Assembly (S2A). The framework is designed to enable a robotic manipulator to assemble multiple parts in a prespecified structure by leveraging object manipulation actions. The primary technical challenge lies in the exponentially increasing complexity of identifying a feasible assembly sequence as the number of parts",
+      "published": "2024-09-20",
+      "pdf_url": "https://arxiv.org/pdf/2409.13620v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2307.01317v2",
+      "title": "Density-based Feasibility Learning with Normalizing Flows for Introspective Robotic Assembly",
+      "authors": [
+        "Jianxiang Feng",
+        "Matan Atad",
+        "Ismael Rodr\u00edguez",
+        "Maximilian Durner"
+      ],
+      "summary": "Machine Learning (ML) models in Robotic Assembly Sequence Planning (RASP) need to be introspective on the predicted solutions, i.e. whether they are feasible or not, to circumvent potential efficiency degradation. Previous works need both feasible and infeasible examples during training. However, the infeasible ones are hard to collect sufficiently when re-training is required for swift adaptation",
+      "published": "2023-07-03",
+      "pdf_url": "https://arxiv.org/pdf/2307.01317v2"
+    }
+  ],
+  "assembly sequence planning stability neural policy": [
+    {
+      "id": "http://arxiv.org/abs/1002.1164v1",
+      "title": "Existence and Global Logarithmic Stability of Impulsive Neural Networks with Time Delay",
+      "authors": [
+        "A. K. Ojha",
+        "Dushmanta Mallick",
+        "C. Mallick"
+      ],
+      "summary": "The stability and convergence of the neural networks are the fundamental characteristics in the Hopfield type networks. Since time delay is ubiquitous in most physical and biological systems, more attention is being made for the delayed neural networks. The inclusion of time delay into a neural model is natural due to the finite transmission time of the interactions. The stability analysis of the ",
+      "published": "2010-02-05",
+      "pdf_url": "https://arxiv.org/pdf/1002.1164v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2204.09616v2",
+      "title": "Assembly Planning from Observations under Physical Constraints",
+      "authors": [
+        "Thomas Chabal",
+        "Robin Strudel",
+        "Etienne Arlaud",
+        "Jean Ponce"
+      ],
+      "summary": "This paper addresses the problem of copying an unknown assembly of primitives with known shape and appearance using information extracted from a single photograph by an off-the-shelf procedure for object detection and pose estimation. The proposed algorithm uses a simple combination of physical stability constraints, convex optimization and Monte Carlo tree search to plan assemblies as sequences o",
+      "published": "2022-04-20",
+      "pdf_url": "https://arxiv.org/pdf/2204.09616v2"
+    },
+    {
+      "id": "http://arxiv.org/abs/2205.01389v1",
+      "title": "Sampling-free obstacle gradients and reactive planning in Neural Radiance Fields (NeRF)",
+      "authors": [
+        "Michael Pantic",
+        "Cesar Cadena",
+        "Roland Siegwart",
+        "Lionel Ott"
+      ],
+      "summary": "This work investigates the use of Neural implicit representations, specifically Neural Radiance Fields (NeRF), for geometrical queries and motion planning. We show that by adding the capacity to infer occupancy in a radius to a pre-trained NeRF, we are effectively learning an approximation to a Euclidean Signed Distance Field (ESDF). Using backward differentiation of the augmented network, we obta",
+      "published": "2022-05-03",
+      "pdf_url": "https://arxiv.org/pdf/2205.01389v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2010.14374v3",
+      "title": "Explainable Machine Learning for Public Policy: Use Cases, Gaps, and Research Directions",
+      "authors": [
+        "Kasun Amarasinghe",
+        "Kit Rodolfa",
+        "Hemank Lamba",
+        "Rayid Ghani"
+      ],
+      "summary": "Explainability is highly-desired in Machine Learning (ML) systems supporting high-stakes policy decisions in areas such as health, criminal justice, education, and employment. While the field of explainable ML has expanded in recent years, much of this work has not taken real-world needs into account. A majority of proposed methods are designed with \\textit{generic} explainability goals without we",
+      "published": "2020-10-27",
+      "pdf_url": "https://arxiv.org/pdf/2010.14374v3"
+    }
+  ],
+  "program synthesis CEGIS counterexample guided inductive": [
+    {
+      "id": "http://arxiv.org/abs/1407.5397v1",
+      "title": "Are There Good Mistakes? A Theoretical Analysis of CEGIS",
+      "authors": [
+        "Susmit Jha",
+        "Sanjit A. Seshia"
+      ],
+      "summary": "Counterexample-guided inductive synthesis CEGIS is used to synthesize programs from a candidate space of programs. The technique is guaranteed to terminate and synthesize the correct program if the space of candidate programs is finite. But the technique may or may not terminate with the correct program if the candidate space of programs is infinite. In this paper, we perform a theoretical analysi",
+      "published": "2014-07-21",
+      "pdf_url": "https://arxiv.org/pdf/1407.5397v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/1904.12371v1",
+      "title": "Counterexample-Driven Synthesis for Probabilistic Program Sketches",
+      "authors": [
+        "Milan \u010ce\u0161ka",
+        "Christian Hensel",
+        "Sebastian Junges",
+        "Joost-Pieter Katoen"
+      ],
+      "summary": "Probabilistic programs are key to deal with uncertainty in e.g. controller synthesis. They are typically small but intricate. Their development is complex and error prone requiring quantitative reasoning over a myriad of alternative designs. To mitigate this complexity, we adopt counterexample-guided inductive synthesis (CEGIS) to automatically synthesise finite-state probabilistic programs. Our a",
+      "published": "2019-04-28",
+      "pdf_url": "https://arxiv.org/pdf/1904.12371v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/1505.03953v4",
+      "title": "A Theory of Formal Synthesis via Inductive Learning",
+      "authors": [
+        "Susmit Jha",
+        "Sanjit A. Seshia"
+      ],
+      "summary": "Formal synthesis is the process of generating a program satisfying a high-level formal specification. In recent times, effective formal synthesis methods have been proposed based on the use of inductive learning. We refer to this class of methods that learn programs from examples as formal inductive synthesis. In this paper, we present a theoretical framework for formal inductive synthesis. We dis",
+      "published": "2015-05-15",
+      "pdf_url": "https://arxiv.org/pdf/1505.03953v4"
+    },
+    {
+      "id": "http://arxiv.org/abs/2110.09947v1",
+      "title": "Using Program Synthesis and Inductive Logic Programming to solve Bongard Problems",
+      "authors": [
+        "Atharv Sonwane",
+        "Sharad Chitlangia",
+        "Tirtharaj Dash",
+        "Lovekesh Vig"
+      ],
+      "summary": "The ability to recognise and make analogies is often used as a measure or test of human intelligence. The ability to solve Bongard problems is an example of such a test. It has also been postulated that the ability to rapidly construct novel abstractions is critical to being able to solve analogical problems. Given an image, the ability to construct a program that would generate that image is one ",
+      "published": "2021-10-19",
+      "pdf_url": "https://arxiv.org/pdf/2110.09947v1"
+    }
+  ],
+  "sketch based program synthesis solar-lezama": [
+    {
+      "id": "http://arxiv.org/abs/2306.09274v1",
+      "title": "Conditional Human Sketch Synthesis with Explicit Abstraction Control",
+      "authors": [
+        "Dar-Yen Chen"
+      ],
+      "summary": "This paper presents a novel free-hand sketch synthesis approach addressing explicit abstraction control in class-conditional and photo-to-sketch synthesis. Abstraction is a vital aspect of sketches, as it defines the fundamental distinction between a sketch and an image. Previous works relied on implicit control to achieve different levels of abstraction, leading to inaccurate control and synthesi",
+      "published": "2023-06-15",
+      "pdf_url": "https://arxiv.org/pdf/2306.09274v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2506.15312v1",
+      "title": "One-shot Face Sketch Synthesis in the Wild via Generative Diffusion Prior and Instruction Tuning",
+      "authors": [
+        "Han Wu",
+        "Junyao Li",
+        "Kangbo Zhao",
+        "Sen Zhang"
+      ],
+      "summary": "Face sketch synthesis is a technique aimed at converting face photos into sketches. Existing face sketch synthesis research mainly relies on training with numerous photo-sketch sample pairs from existing datasets. However, these large-scale discriminative learning methods will have to face problems such as data scarcity and high human labor costs. Once the training data becomes scarce, their gener",
+      "published": "2025-06-18",
+      "pdf_url": "https://arxiv.org/pdf/2506.15312v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2112.01019v1",
+      "title": "Unconstrained Face Sketch Synthesis via Perception-Adaptive Network and A New Benchmark",
+      "authors": [
+        "Lin Nie",
+        "Lingbo Liu",
+        "Zhengtao Wu",
+        "Wenxiong Kang"
+      ],
+      "summary": "Face sketch generation has attracted much attention in the field of visual computing. However, existing methods either are limited to constrained conditions or heavily rely on various preprocessing steps to deal with in-the-wild cases. In this paper, we argue that accurately perceiving facial region and facial components is crucial for unconstrained sketch synthesis. To this end, we propose a nove",
+      "published": "2021-12-02",
+      "pdf_url": "https://arxiv.org/pdf/2112.01019v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/1909.08313v3",
+      "title": "Unsupervised Sketch-to-Photo Synthesis",
+      "authors": [
+        "Runtao Liu",
+        "Qian Yu",
+        "Stella Yu"
+      ],
+      "summary": "Humans can envision a realistic photo given a free-hand sketch that is not only spatially imprecise and geometrically distorted but also without colors and visual details. We study unsupervised sketch-to-photo synthesis for the first time, learning from unpaired sketch-photo data where the target photo for a sketch is unknown during training. Existing works only deal with style change or spatial d",
+      "published": "2019-09-18",
+      "pdf_url": "https://arxiv.org/pdf/1909.08313v3"
+    }
+  ],
+  "library learning program synthesis abstraction": [
+    {
+      "id": "http://arxiv.org/abs/2306.09274v1",
+      "title": "Conditional Human Sketch Synthesis with Explicit Abstraction Control",
+      "authors": [
+        "Dar-Yen Chen"
+      ],
+      "summary": "This paper presents a novel free-hand sketch synthesis approach addressing explicit abstraction control in class-conditional and photo-to-sketch synthesis. Abstraction is a vital aspect of sketches, as it defines the fundamental distinction between a sketch and an image. Previous works relied on implicit control to achieve different levels of abstraction, leading to inaccurate control and synthesi",
+      "published": "2023-06-15",
+      "pdf_url": "https://arxiv.org/pdf/2306.09274v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/1404.1905v1",
+      "title": "Developing a 21st Century Global Library for Mathematics Research",
+      "authors": [
+        "Committee on Planning a Global Library of the Mathematical Sciences"
+      ],
+      "summary": "Developing a 21st Century Global Library for Mathematics Research discusses how information about what the mathematical literature contains can be formalized and made easier to express, encode, and explore. Many of the tools necessary to make this information system a reality will require much more than indexing and will instead depend on community input paired with machine learning, where mathema",
+      "published": "2014-04-04",
+      "pdf_url": "https://arxiv.org/pdf/1404.1905v1"
+    },
+    {
+      "id": "http://arxiv.org/abs/2106.11053v3",
+      "title": "Leveraging Language to Learn Program Abstractions and Search Heuristics",
+      "authors": [
+        "Catherine Wong",
+        "Kevin Ellis",
+        "Joshua B. Tenenbaum",
+        "Jacob Andreas"
+      ],
+      "summary": "Inductive program synthesis, or inferring programs from examples of desired behavior, offers a general paradigm for building interpretable, robust, and generalizable machine learning systems. Effective program synthesis depends on two key ingredients: a strong library of functions from which to build programs, and an efficient search strategy for finding programs that solve a given task. We introd",
+      "published": "2021-06-18",
+      "pdf_url": "https://arxiv.org/pdf/2106.11053v3"
+    },
+    {
+      "id": "http://arxiv.org/abs/1912.03905v2",
+      "title": "ChainerRL: A Deep Reinforcement Learning Library",
+      "authors": [
+        "Yasuhiro Fujita",
+        "Prabhat Nagarajan",
+        "Toshiki Kataoka",
+        "Takahiro Ishikawa"
+      ],
+      "summary": "In this paper, we introduce ChainerRL, an open-source deep reinforcement learning (DRL) library built using Python and the Chainer deep learning framework. ChainerRL implements a comprehensive set of DRL algorithms and techniques drawn from state-of-the-art research in the field. To foster reproducible research, and for instructional purposes, ChainerRL provides scripts that closely replicate the ",
+      "published": "2019-12-09",
+      "pdf_url": "https://arxiv.org/pdf/1912.03905v2"
+    }
+  ]
+}

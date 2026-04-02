@@ -1,0 +1,14 @@
+*.pdf
+*.PDF
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bib
+*.aux
+*.log
+*.out
+*.synctex.gz
+.DS_Store
+__pycache__/
+*.pyc
