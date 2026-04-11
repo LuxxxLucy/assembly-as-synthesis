@@ -1,0 +1,299 @@
+/* Polar Void — cold, austere, near-neutral */
+
+:root {
+  --bg: #1A1D23;
+  --surface: #22262E;
+  --surface-raised: #2A2F3A;
+  --fg: #D8DEE9;
+  --muted: #6B7894;
+  --accent: #7BA4C7;
+  --terracotta: #D97757;
+  --success: #8FBCA3;
+  --error: #BF616A;
+  --ground: #3B4048;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+  padding: 2rem 2rem 1rem;
+  border-bottom: 1px solid var(--surface-raised);
+}
+
+header h1 {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+header .subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+  font-weight: 300;
+}
+
+/* ── Main layout ── */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 2rem 2rem;
+  gap: 1rem;
+}
+
+#viewer {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  min-height: 400px;
+}
+
+/* ── Structure panel ── */
+#structure-panel {
+  flex: 7;
+  background: var(--surface);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+#canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 1rem;
+  background: rgba(26, 29, 35, 0.85);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ── Info panel ── */
+#info-panel {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panel-section {
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.panel-section h2 {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--fg);
+  margin-bottom: 0.5rem;
+}
+
+.panel-section h3 {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+#sequence-display {
+  color: var(--fg);
+  word-break: break-all;
+}
+
+#constraints-list {
+  color: var(--fg);
+  line-height: 1.8;
+}
+
+.constraint-item {
+  padding: 0.1rem 0;
+}
+
+.constraint-new {
+  color: var(--terracotta);
+}
+
+#result-display {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.result-feasible { color: var(--success); }
+.result-infeasible { color: var(--error); }
+
+/* ── Timeline ── */
+#timeline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+#timeline-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--surface-raised);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+}
+
+#timeline-progress {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.15s ease;
+}
+
+#timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#timeline-controls button {
+  background: var(--surface);
+  border: 1px solid var(--surface-raised);
+  color: var(--fg);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+#timeline-controls button:hover {
+  background: var(--surface-raised);
+}
+
+#frame-counter {
+  font-size: 0.7rem;
+  color: var(--muted);
+  min-width: 5rem;
+}
+
+/* ── Trace selector ── */
+#trace-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+#trace-selector label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+#trace-select {
+  background: var(--surface);
+  border: 1px solid var(--surface-raised);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#trace-select:focus {
+  outline: 1px solid var(--accent);
+}
+
+/* ── SVG block styles ── */
+.block-ghost {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 0.5;
+  opacity: 0.2;
+}
+
+.block-placed {
+  fill: var(--accent);
+  stroke: var(--fg);
+  stroke-width: 1;
+  opacity: 0.85;
+  filter: url(#shadow);
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              fill 0.3s ease;
+}
+
+.block-active {
+  fill: var(--terracotta);
+  stroke: var(--fg);
+  stroke-width: 1.2;
+  opacity: 0.9;
+  filter: url(#shadow);
+}
+
+.block-failed {
+  fill: var(--error);
+  stroke: var(--fg);
+  stroke-width: 1.5;
+  opacity: 0.9;
+}
+
+.block-label {
+  fill: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.constraint-arrow {
+  stroke: var(--terracotta);
+  stroke-width: 1.5;
+  fill: none;
+  marker-end: url(#arrowhead);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.constraint-arrow.visible {
+  opacity: 0.8;
+}
+
+.ground-rect {
+  fill: var(--ground);
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counterplan — CEGIS Assembly Planning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>counterplan</h1>
+    <p class="subtitle">When assembly fails, fix the geometry.</p>
+  </header>
+
+  <main>
+    <div id="viewer">
+      <div id="structure-panel">
+        <svg id="canvas" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <filter id="shadow">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+            </filter>
+          </defs>
+          <g id="ground-group"></g>
+          <g id="block-group"></g>
+          <g id="arrow-group"></g>
+        </svg>
+        <div id="status-bar">
+          <span id="status-text">Load a trace to begin</span>
+        </div>
+      </div>
+
+      <aside id="info-panel">
+        <div class="panel-section">
+          <h2 id="round-label">Round —</h2>
+          <div id="sequence-display" class="mono"></div>
+        </div>
+        <div class="panel-section">
+          <h3>Constraints</h3>
+          <div id="constraints-list" class="mono"></div>
+        </div>
+        <div class="panel-section">
+          <h3>Result</h3>
+          <div id="result-display"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="timeline">
+      <div id="timeline-bar">
+        <div id="timeline-progress"></div>
+      </div>
+      <div id="timeline-controls">
+        <button id="btn-prev" title="Previous step">&larr;</button>
+        <button id="btn-play" title="Play/Pause">&#9654;</button>
+        <button id="btn-next" title="Next step">&rarr;</button>
+        <span id="frame-counter" class="mono">0 / 0</span>
+      </div>
+    </div>
+
+    <div id="trace-selector">
+      <label>Structure:</label>
+      <select id="trace-select">
+        <option value="post_and_lintel">Post & Lintel (feasible)</option>
+        <option value="pyramid_10">Pyramid 10 (feasible)</option>
+        <option value="arch_5">Arch 5 (infeasible)</option>
+        <option value="gothic_arch">Gothic Arch (infeasible)</option>
+      </select>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

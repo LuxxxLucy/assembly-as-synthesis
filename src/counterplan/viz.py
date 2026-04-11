@@ -24,19 +24,21 @@ from .cegis import CEGISResult, CEGISRound
 from .repair import RepairResult
 
 
-# Nord-inspired palette
+# Polar Void palette — cold, austere, near-neutral
 COLORS = {
-    'bg': '#2E3440',
+    'bg': '#1A1D23',
     'fg': '#D8DEE9',
-    'blue': '#5E81AC',
+    'blue': '#7BA4C7',
     'cyan': '#88C0D0',
-    'green': '#A3BE8C',
-    'yellow': '#EBCB8B',
-    'orange': '#D08770',
+    'green': '#8FBCA3',
+    'yellow': '#D4A76A',
+    'orange': '#D97757',       # Anthropic terracotta — active element accent
     'red': '#BF616A',
     'purple': '#B48EAD',
-    'light_bg': '#3B4252',
-    'ground': '#4C566A',
+    'light_bg': '#22262E',
+    'surface': '#2A2F3A',
+    'ground': '#3B4048',
+    'muted': '#6B7894',
 }
 
 
@@ -361,3 +363,263 @@ def plot_assembly_steps(structure: Structure, sequence: list[int]):
                 color=COLORS['fg'], fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
     return fig
+
+
+# ── Animated CEGIS negotiation replay ───────────────────────────
+
+def animate_negotiation_replay(
+    cegis_result: CEGISResult,
+    structure: Structure,
+    save_path: str | None = None,
+    fps: int = 24,
+) -> animation.FuncAnimation:
+    """Animated CEGIS negotiation: propose → place → fail → learn → rewind → retry.
+
+    Each round shows blocks appearing one by one, failure flash, constraint
+    annotation, and rewind. The final round (if successful) shows the full
+    assembly with a success pulse.
+
+    Produces ~30s at 24fps. Output: MP4 (ffmpeg) or GIF (pillow).
+    """
+    rounds = cegis_result.rounds
+    n_blocks = len(structure.blocks)
+
+    # ── Build frame timeline ──
+    # Each round has phases: PROPOSE, PLACE×k, FAIL (or SUCCESS), LEARN, REWIND
+    PROPOSE_FRAMES = int(1.0 * fps)    # 1s
+    PLACE_FRAMES = int(0.6 * fps)      # 0.6s per block placement
+    FAIL_FRAMES = int(0.8 * fps)       # 0.8s failure flash
+    LEARN_FRAMES = int(1.0 * fps)      # 1s constraint display
+    REWIND_FRAMES = int(0.8 * fps)     # 0.8s rewind
+    SUCCESS_FRAMES = int(1.5 * fps)    # 1.5s success hold
+    PAUSE_FRAMES = int(0.3 * fps)      # 0.3s between rounds
+
+    # Pre-compute frame plan: list of (round_idx, phase, sub_frame, block_idx)
+    frame_plan = []
+
+    for ri, rd in enumerate(rounds):
+        n_steps = rd.failure_step if rd.failure_step is not None else len(rd.candidate)
+
+        # Propose phase
+        for f in range(PROPOSE_FRAMES):
+            frame_plan.append(('propose', ri, f / PROPOSE_FRAMES, -1))
+
+        # Place blocks one by one
+        for step in range(n_steps):
+            for f in range(PLACE_FRAMES):
+                frame_plan.append(('place', ri, f / PLACE_FRAMES, step))
+
+        if rd.failure_step is not None:
+            # Fail phase
+            for f in range(FAIL_FRAMES):
+                frame_plan.append(('fail', ri, f / FAIL_FRAMES, rd.failure_step))
+            # Learn phase
+            for f in range(LEARN_FRAMES):
+                frame_plan.append(('learn', ri, f / LEARN_FRAMES, rd.failure_step))
+            # Rewind phase
+            for f in range(REWIND_FRAMES):
+                frame_plan.append(('rewind', ri, f / REWIND_FRAMES, n_steps))
+            # Pause
+            for f in range(PAUSE_FRAMES):
+                frame_plan.append(('pause', ri, 0, 0))
+        else:
+            # Success — place remaining blocks
+            for step in range(n_steps, len(rd.candidate)):
+                for f in range(PLACE_FRAMES):
+                    frame_plan.append(('place', ri, f / PLACE_FRAMES, step))
+            # Hold success
+            for f in range(SUCCESS_FRAMES):
+                frame_plan.append(('success', ri, f / SUCCESS_FRAMES, len(rd.candidate)))
+
+    total_frames = len(frame_plan)
+
+    # ── Setup figure ──
+    fig = plt.figure(figsize=(14, 8))
+    fig.set_facecolor(COLORS['bg'])
+    # Structure viewport (left 70%)
+    ax_struct = fig.add_axes([0.02, 0.12, 0.65, 0.82])
+    # Info panel (right 30%)
+    ax_info = fig.add_axes([0.70, 0.12, 0.28, 0.82])
+    # Progress bar (bottom)
+    ax_progress = fig.add_axes([0.02, 0.02, 0.96, 0.06])
+
+    # Accumulated constraints across rounds
+    all_constraints = []
+
+    def update(frame_idx):
+        if frame_idx >= len(frame_plan):
+            return
+
+        phase, ri, t, step_or_block = frame_plan[frame_idx]
+        rd = rounds[ri]
+
+        # ── Clear axes ──
+        ax_struct.clear()
+        ax_info.clear()
+        ax_progress.clear()
+
+        # ── Structure viewport ──
+        setup_axes(ax_struct, structure)
+
+        if phase == 'propose':
+            # Show all blocks as ghosts, sequence text fading in
+            for block in structure.blocks:
+                draw_block(ax_struct, block, color='none', alpha=0.15 + 0.15 * t,
+                          edge_color=COLORS['muted'], edge_width=0.5, label=True)
+            ax_struct.set_title(f'Round {ri + 1}: proposing sequence...',
+                              color=COLORS['fg'], fontsize=13, fontweight='bold', pad=10)
+
+        elif phase == 'place':
+            # Show placed blocks solid, current block descending
+            placed_so_far = rd.candidate[:step_or_block]
+            for block in structure.blocks:
+                if block.id in placed_so_far:
+                    draw_block(ax_struct, block, color=COLORS['blue'], alpha=0.85)
+                elif block.id == rd.candidate[step_or_block]:
+                    # Current block: descending animation
+                    offset_y = (1 - t) * 0.5  # descend from 0.5 units above
+                    shifted_verts = block.vertices.copy()
+                    shifted_verts[:, 1] += offset_y
+                    temp_block = Block(id=block.id, vertices=shifted_verts, mass=block.mass)
+                    alpha = 0.4 + 0.45 * t
+                    draw_block(ax_struct, temp_block, color=COLORS['orange'], alpha=alpha)
+                else:
+                    draw_block(ax_struct, block, color='none', alpha=0.1,
+                              edge_color=COLORS['muted'], edge_width=0.3, label=False)
+            ax_struct.set_title(
+                f'Round {ri + 1}, Step {step_or_block + 1}: placing block {rd.candidate[step_or_block]}',
+                color=COLORS['orange'], fontsize=13, fontweight='bold', pad=10)
+
+        elif phase == 'fail':
+            # Show placed blocks + failed block flashing red
+            placed_so_far = rd.candidate[:step_or_block]
+            for block in structure.blocks:
+                if block.id in placed_so_far:
+                    draw_block(ax_struct, block, color=COLORS['blue'], alpha=0.85)
+                elif block.id == rd.candidate[step_or_block]:
+                    # Flash red: pulse 3 times
+                    pulse = abs(np.sin(t * 3 * np.pi))
+                    color = COLORS['red'] if pulse > 0.5 else COLORS['light_bg']
+                    draw_block(ax_struct, block, color=color, alpha=0.9)
+                else:
+                    draw_block(ax_struct, block, color='none', alpha=0.1,
+                              edge_color=COLORS['muted'], edge_width=0.3, label=False)
+            ax_struct.set_title(
+                f'Round {ri + 1}: block {rd.candidate[step_or_block]} UNSTABLE',
+                color=COLORS['red'], fontsize=13, fontweight='bold', pad=10)
+
+        elif phase == 'learn':
+            # Show placed + failed block in red, constraint text appearing
+            placed_so_far = rd.candidate[:step_or_block]
+            for block in structure.blocks:
+                if block.id in placed_so_far:
+                    draw_block(ax_struct, block, color=COLORS['blue'], alpha=0.85)
+                elif block.id == rd.candidate[step_or_block]:
+                    draw_block(ax_struct, block, color=COLORS['red'], alpha=0.6)
+                else:
+                    draw_block(ax_struct, block, color='none', alpha=0.1,
+                              edge_color=COLORS['muted'], edge_width=0.3, label=False)
+            # Draw constraint arrows
+            for pc in rd.new_constraints:
+                b_before = structure.block_by_id(pc.before)
+                b_after = structure.block_by_id(pc.after)
+                if b_before and b_after:
+                    ax_struct.annotate('',
+                        xy=b_after.centroid, xytext=b_before.centroid,
+                        arrowprops=dict(arrowstyle='->', color=COLORS['orange'],
+                                        lw=2.0 * t, mutation_scale=12, alpha=t))
+            ax_struct.set_title(
+                f'Round {ri + 1}: learning constraints',
+                color=COLORS['orange'], fontsize=13, fontweight='bold', pad=10)
+
+        elif phase == 'rewind':
+            # Blocks fade out in reverse
+            n_placed = step_or_block
+            n_visible = int(n_placed * (1 - t))
+            placed_so_far = rd.candidate[:n_visible]
+            for block in structure.blocks:
+                if block.id in placed_so_far:
+                    draw_block(ax_struct, block, color=COLORS['blue'], alpha=0.5 * (1 - t))
+                else:
+                    draw_block(ax_struct, block, color='none', alpha=0.08,
+                              edge_color=COLORS['muted'], edge_width=0.3, label=False)
+            ax_struct.set_title(f'Round {ri + 1}: rewinding...',
+                              color=COLORS['muted'], fontsize=13, pad=10)
+
+        elif phase == 'pause':
+            for block in structure.blocks:
+                draw_block(ax_struct, block, color='none', alpha=0.1,
+                          edge_color=COLORS['muted'], edge_width=0.3, label=False)
+            ax_struct.set_title('', color=COLORS['fg'])
+
+        elif phase == 'success':
+            # All blocks placed with subtle pulse
+            pulse = 0.85 + 0.15 * abs(np.sin(t * 2 * np.pi))
+            for block in structure.blocks:
+                draw_block(ax_struct, block, color=COLORS['blue'], alpha=pulse)
+            ax_struct.set_title(f'Round {ri + 1}: STABLE — assembly sequence found',
+                              color=COLORS['green'], fontsize=13, fontweight='bold', pad=10)
+
+        # ── Info panel ──
+        ax_info.set_facecolor(COLORS['bg'])
+        ax_info.set_xlim(0, 1)
+        ax_info.set_ylim(0, 1)
+        ax_info.axis('off')
+
+        y = 0.95
+        ax_info.text(0.05, y, f'Round {ri + 1}/{len(rounds)}',
+                    color=COLORS['fg'], fontsize=12, fontweight='bold',
+                    family='monospace', transform=ax_info.transAxes)
+        y -= 0.06
+
+        # Show current sequence
+        ax_info.text(0.05, y, 'Sequence:', color=COLORS['muted'], fontsize=9,
+                    family='monospace', transform=ax_info.transAxes)
+        y -= 0.04
+        seq_str = ' '.join(str(b) for b in rd.candidate)
+        ax_info.text(0.05, y, seq_str, color=COLORS['fg'], fontsize=9,
+                    family='monospace', transform=ax_info.transAxes)
+        y -= 0.08
+
+        # Show accumulated constraints
+        ax_info.text(0.05, y, 'Constraints:', color=COLORS['muted'], fontsize=9,
+                    family='monospace', transform=ax_info.transAxes)
+        y -= 0.04
+
+        # Collect all constraints up to current round
+        shown_constraints = set()
+        for prev_rd in rounds[:ri + 1]:
+            for pc in prev_rd.new_constraints:
+                shown_constraints.add((pc.before, pc.after))
+
+        for (before, after) in sorted(shown_constraints):
+            is_new = any(pc.before == before and pc.after == after for pc in rd.new_constraints)
+            color = COLORS['orange'] if (is_new and phase in ('learn', 'fail')) else COLORS['fg']
+            ax_info.text(0.07, y, f'{before} → {after}', color=color, fontsize=9,
+                        family='monospace', transform=ax_info.transAxes)
+            y -= 0.035
+            if y < 0.1:
+                break
+
+        # ── Progress bar ──
+        ax_progress.set_facecolor(COLORS['light_bg'])
+        ax_progress.set_xlim(0, 1)
+        ax_progress.set_ylim(0, 1)
+        ax_progress.axis('off')
+
+        progress = frame_idx / max(total_frames - 1, 1)
+        bar_color = COLORS['green'] if phase == 'success' else COLORS['blue']
+        ax_progress.add_patch(patches.Rectangle(
+            (0, 0.1), progress, 0.8,
+            facecolor=bar_color, alpha=0.6, edgecolor='none'))
+
+    anim = animation.FuncAnimation(
+        fig, update, frames=total_frames, interval=1000 // fps, repeat=False,
+    )
+
+    if save_path:
+        writer = 'ffmpeg' if save_path.endswith('.mp4') else 'pillow'
+        dpi = 150 if save_path.endswith('.mp4') else 100
+        anim.save(save_path, writer=writer, fps=fps, dpi=dpi)
+
+    return anim

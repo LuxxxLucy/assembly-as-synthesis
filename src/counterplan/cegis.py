@@ -99,43 +99,20 @@ def solve(
                 failure_step = k
                 failed_block = candidate[k]
 
-                # Counterexample generalization: find which blocks must precede
+                # Counterexample generalization: find minimal absent blocks
+                # that must precede failed_block for stability
                 placed_before = candidate[:k]
                 support_set = find_minimal_support_set(
-                    structure, failed_block, placed_before, friction
+                    structure, failed_block, placed_before, block_ids, friction
                 )
 
-                # For each needed support not yet placed, add precedence constraint
-                placed_set = set(placed_before)
-                all_block_ids = set(block_ids)
-                # Find blocks that contact failed_block but aren't placed
-                contacts = structure.detect_contacts(block_ids)
-                neighbors = set()
-                for c in contacts:
-                    if c.block_a == failed_block and c.block_b >= 0:
-                        neighbors.add(c.block_b)
-                    elif c.block_b == failed_block and c.block_a >= 0:
-                        neighbors.add(c.block_a)
-
-                # The support set tells us which neighbors are necessary
                 for sb in support_set:
                     pc = PrecedenceConstraint(
                         before=sb, after=failed_block,
-                        reason=f"Round {round_num}: block {sb} must support block {failed_block}"
+                        reason=f"Round {round_num}: block {sb} must precede block {failed_block}"
                     )
                     new_constraints.append(pc)
                     constraints.add(pc)
-
-                # If no specific support found, require ALL neighbors below
-                if not support_set and neighbors:
-                    for nb in neighbors:
-                        if nb not in placed_set:
-                            pc = PrecedenceConstraint(
-                                before=nb, after=failed_block,
-                                reason=f"Round {round_num}: block {nb} neighbors block {failed_block}"
-                            )
-                            new_constraints.append(pc)
-                            constraints.add(pc)
 
                 # Estimate pruned permutations (conservative: n!/2 per constraint)
                 pruned = _estimate_pruned(n, len(new_constraints))

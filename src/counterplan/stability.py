@@ -222,33 +222,56 @@ def find_minimal_support_set(
     structure: Structure,
     block_id: int,
     placed_before: list[int],
+    all_block_ids: list[int],
     friction: float = FRICTION_COEFF,
 ) -> list[int]:
-    """Find the minimal subset of placed_before needed to support block_id.
+    """Find the minimal set of ABSENT blocks needed to make block_id stable.
 
-    This is used for counterexample generalization: if block_id is unstable,
-    which blocks MUST be placed before it?
+    Given that block_id is unstable with placed_before, identify which blocks
+    NOT yet placed must precede block_id to enable stability. This is the
+    counterexample generalization step — analogous to 1-UIP clause learning
+    in CDCL SAT solvers.
 
-    Returns a list of block IDs that are necessary supports.
+    Algorithm:
+      1. Find all neighbors of block_id (from full contact graph)
+      2. Identify absent neighbors (not in placed_before)
+      3. Check if adding ALL absent neighbors resolves instability
+      4. If yes, greedily minimize: remove unnecessary ones
+      5. Return the minimal set of absent blocks that resolve instability
+
+    Returns a list of block IDs (absent neighbors) that must precede block_id.
+    Returns empty list if block_id is infeasible even with all blocks present.
     """
-    all_placed = placed_before + [block_id]
-    contacts = structure.detect_contacts(all_placed)
+    placed_set = set(placed_before)
 
-    # Find blocks that share contacts with block_id
-    supporting_blocks = set()
-    for c in contacts:
+    # Find neighbors of block_id from the full structure contact graph
+    all_contacts = structure.detect_contacts(all_block_ids)
+    neighbors = set()
+    for c in all_contacts:
         if c.block_a == block_id and c.block_b >= 0:
-            supporting_blocks.add(c.block_b)
+            neighbors.add(c.block_b)
         elif c.block_b == block_id and c.block_a >= 0:
-            supporting_blocks.add(c.block_a)
+            neighbors.add(c.block_a)
 
-    # Try removing each supporting block — if removal makes block_id unstable,
-    # that block is necessary
-    necessary = []
-    for sb in supporting_blocks:
-        reduced = [b for b in all_placed if b != sb]
-        result = check_stability(structure, reduced, friction=friction)
-        if not result.feasible:
-            necessary.append(sb)
+    absent_neighbors = [nb for nb in neighbors if nb not in placed_set]
+    if not absent_neighbors:
+        return []
+
+    # Check if block_id is stable with ALL blocks present (full structure)
+    # We use all_block_ids (not just neighbors) to avoid cascading instability
+    # from other blocks that are themselves missing supports
+    full_result = check_stability(structure, all_block_ids, friction=friction)
+    if not full_result.feasible:
+        # Structure is globally infeasible even when complete — truly infeasible
+        return absent_neighbors  # return all as conservative constraint
+
+    # Greedily minimize: try removing each absent neighbor, keep only necessary ones
+    necessary = list(absent_neighbors)
+    for nb in absent_neighbors:
+        trial = [b for b in necessary if b != nb]
+        test_set = list(placed_set) + trial + [block_id]
+        result = check_stability(structure, test_set, friction=friction)
+        if result.feasible:
+            necessary = trial  # nb is redundant, remove it
 
     return necessary
