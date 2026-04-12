@@ -1,31 +1,31 @@
 {
   "schema": "counterplan-trace/2",
-  "name": "post_and_lintel",
+  "name": "pyramid_6",
   "structure": {
     "blocks": [
       {
         "id": 0,
         "vertices": [
           [
-            1.25,
+            -2.25,
             0.0
           ],
           [
-            2.25,
+            -0.75,
             0.0
           ],
           [
-            2.25,
-            1.2
+            -0.75,
+            1.0
           ],
           [
-            1.25,
-            1.2
+            -2.25,
+            1.0
           ]
         ],
         "centroid": [
-          1.7500000000000002,
-          0.6000000000000001
+          -1.5,
+          0.5
         ],
         "mass": 1.5,
         "depth": 1.0
@@ -34,25 +34,25 @@
         "id": 1,
         "vertices": [
           [
-            1.25,
-            1.2
+            -0.75,
+            0.0
           ],
           [
-            2.25,
-            1.2
+            0.75,
+            0.0
           ],
           [
-            2.25,
-            2.4
+            0.75,
+            1.0
           ],
           [
-            1.25,
-            2.4
+            -0.75,
+            1.0
           ]
         ],
         "centroid": [
-          1.7500000000000002,
-          1.7999999999999998
+          -0.0,
+          0.5
         ],
         "mass": 1.5,
         "depth": 1.0
@@ -61,25 +61,25 @@
         "id": 2,
         "vertices": [
           [
-            -2.25,
+            0.75,
             0.0
           ],
           [
-            -1.25,
+            2.25,
             0.0
           ],
           [
-            -1.25,
-            1.2
+            2.25,
+            1.0
           ],
           [
-            -2.25,
-            1.2
+            0.75,
+            1.0
           ]
         ],
         "centroid": [
-          -1.7500000000000002,
-          0.6000000000000001
+          1.5,
+          0.5
         ],
         "mass": 1.5,
         "depth": 1.0
@@ -88,61 +88,88 @@
         "id": 3,
         "vertices": [
           [
-            -2.25,
-            1.2
+            -1.5,
+            1.0
           ],
           [
-            -1.25,
-            1.2
+            0.0,
+            1.0
           ],
           [
-            -1.25,
-            2.4
+            0.0,
+            2.0
           ],
           [
-            -2.25,
-            2.4
+            -1.5,
+            2.0
           ]
         ],
         "centroid": [
-          -1.7500000000000002,
-          1.7999999999999998
+          -0.75,
+          1.5
         ],
-        "mass": 1.5,
+        "mass": 1.2,
         "depth": 1.0
       },
       {
         "id": 4,
         "vertices": [
           [
-            -2.55,
-            2.4
+            0.0,
+            1.0
           ],
           [
-            2.55,
-            2.4
+            1.5,
+            1.0
           ],
           [
-            2.55,
+            1.5,
+            2.0
+          ],
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "centroid": [
+          0.75,
+          1.5
+        ],
+        "mass": 1.2,
+        "depth": 1.0
+      },
+      {
+        "id": 5,
+        "vertices": [
+          [
+            -0.75,
+            2.0
+          ],
+          [
+            0.75,
+            2.0
+          ],
+          [
+            0.75,
             3.0
           ],
           [
-            -2.55,
+            -0.75,
             3.0
           ]
         ],
         "centroid": [
           -0.0,
-          2.7
+          2.5
         ],
-        "mass": 2.5,
+        "mass": 1.0,
         "depth": 1.0
       }
     ],
     "ground_y": 0.0,
     "extents": {
-      "min_x": -2.55,
-      "max_x": 2.55,
+      "min_x": -2.25,
+      "max_x": 2.25,
       "min_y": 0.0,
       "max_y": 3.0
     }
@@ -150,112 +177,33 @@
   "result": {
     "feasible": true,
     "sequence": [
-      0,
-      2,
-      3,
       1,
-      4
+      2,
+      4,
+      0,
+      3,
+      5
     ],
-    "total_rounds": 3
+    "total_rounds": 2
   },
   "rounds": [
     {
       "round": 0,
       "candidate": [
+        5,
         0,
         1,
         4,
         3,
         2
       ],
-      "failure_step": 2,
-      "failed_block": 4,
+      "failure_step": 0,
+      "failed_block": 5,
       "failed_verifier": "stability",
       "steps": [
         {
           "step": 0,
-          "block": 0,
-          "feasible": true,
-          "failed_verifier": null,
-          "verifiers": [
-            {
-              "verifier": "kinematic",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "direction": [
-                  0.0,
-                  -1.0
-                ],
-                "blockers": []
-              }
-            },
-            {
-              "verifier": "stability",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "feasible": true,
-                "margin": 0.4999999999999998,
-                "block_margins": {
-                  "0": 0.4999999999999998
-                }
-              }
-            },
-            {
-              "verifier": "landing",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "support": "ground"
-              }
-            }
-          ]
-        },
-        {
-          "step": 1,
-          "block": 1,
-          "feasible": true,
-          "failed_verifier": null,
-          "verifiers": [
-            {
-              "verifier": "kinematic",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "direction": [
-                  0.0,
-                  -1.0
-                ],
-                "blockers": []
-              }
-            },
-            {
-              "verifier": "stability",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "feasible": true,
-                "margin": 0.4999999999999998,
-                "block_margins": {
-                  "0": 0.4999999999999998,
-                  "1": 0.4999999999999998
-                }
-              }
-            },
-            {
-              "verifier": "landing",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "support": 0
-              }
-            }
-          ]
-        },
-        {
-          "step": 2,
-          "block": 4,
+          "block": 5,
           "feasible": false,
           "failed_verifier": "stability",
           "verifiers": [
@@ -274,7 +222,7 @@
             {
               "verifier": "stability",
               "feasible": false,
-              "reason": "block 4 unstable without [3]",
+              "reason": "block 5 unstable without [3, 4]",
               "diagnostics": {
                 "feasible": false,
                 "margin": null,
@@ -287,9 +235,15 @@
       "constraints_learned": [
         {
           "before": 3,
-          "after": 4,
+          "after": 5,
           "source": "stability",
-          "reason": "3 must support 4"
+          "reason": "3 must support 5"
+        },
+        {
+          "before": 4,
+          "after": 5,
+          "source": "stability",
+          "reason": "4 must support 5"
         }
       ]
     },
@@ -297,63 +251,11 @@
       "round": 1,
       "candidate": [
         1,
-        0,
         2,
-        3,
-        4
-      ],
-      "failure_step": 0,
-      "failed_block": 1,
-      "failed_verifier": "stability",
-      "steps": [
-        {
-          "step": 0,
-          "block": 1,
-          "feasible": false,
-          "failed_verifier": "stability",
-          "verifiers": [
-            {
-              "verifier": "kinematic",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "direction": [
-                  0.0,
-                  -1.0
-                ],
-                "blockers": []
-              }
-            },
-            {
-              "verifier": "stability",
-              "feasible": false,
-              "reason": "block 1 unstable without [0]",
-              "diagnostics": {
-                "feasible": false,
-                "margin": null,
-                "block_margins": null
-              }
-            }
-          ]
-        }
-      ],
-      "constraints_learned": [
-        {
-          "before": 0,
-          "after": 1,
-          "source": "stability",
-          "reason": "0 must support 1"
-        }
-      ]
-    },
-    {
-      "round": 2,
-      "candidate": [
+        4,
         0,
-        2,
         3,
-        1,
-        4
+        5
       ],
       "failure_step": null,
       "failed_block": null,
@@ -361,7 +263,7 @@
       "steps": [
         {
           "step": 0,
-          "block": 0,
+          "block": 1,
           "feasible": true,
           "failed_verifier": null,
           "verifiers": [
@@ -383,9 +285,9 @@
               "reason": "",
               "diagnostics": {
                 "feasible": true,
-                "margin": 0.4999999999999998,
+                "margin": 0.49999999999999994,
                 "block_margins": {
-                  "0": 0.4999999999999998
+                  "1": 0.49999999999999994
                 }
               }
             },
@@ -423,10 +325,10 @@
               "reason": "",
               "diagnostics": {
                 "feasible": true,
-                "margin": 0.4999999999999998,
+                "margin": -0.0,
                 "block_margins": {
-                  "0": 0.4999999999999998,
-                  "2": 0.4999999999999998
+                  "1": -0.0,
+                  "2": -0.0
                 }
               }
             },
@@ -442,91 +344,6 @@
         },
         {
           "step": 2,
-          "block": 3,
-          "feasible": true,
-          "failed_verifier": null,
-          "verifiers": [
-            {
-              "verifier": "kinematic",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "direction": [
-                  0.0,
-                  -1.0
-                ],
-                "blockers": []
-              }
-            },
-            {
-              "verifier": "stability",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "feasible": true,
-                "margin": 0.4999999999999998,
-                "block_margins": {
-                  "0": 0.4999999999999998,
-                  "2": 0.4999999999999998,
-                  "3": 0.4999999999999998
-                }
-              }
-            },
-            {
-              "verifier": "landing",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "support": 2
-              }
-            }
-          ]
-        },
-        {
-          "step": 3,
-          "block": 1,
-          "feasible": true,
-          "failed_verifier": null,
-          "verifiers": [
-            {
-              "verifier": "kinematic",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "direction": [
-                  0.0,
-                  -1.0
-                ],
-                "blockers": []
-              }
-            },
-            {
-              "verifier": "stability",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "feasible": true,
-                "margin": 0.4999999999999998,
-                "block_margins": {
-                  "0": 0.4999999999999998,
-                  "2": 0.4999999999999998,
-                  "3": 0.4999999999999998,
-                  "1": 0.4999999999999998
-                }
-              }
-            },
-            {
-              "verifier": "landing",
-              "feasible": true,
-              "reason": "",
-              "diagnostics": {
-                "support": 0
-              }
-            }
-          ]
-        },
-        {
-          "step": 4,
           "block": 4,
           "feasible": true,
           "failed_verifier": null,
@@ -551,10 +368,8 @@
                 "feasible": true,
                 "margin": -0.0,
                 "block_margins": {
-                  "0": 0.4999999999999996,
-                  "2": 0.5000000000000001,
-                  "3": -0.0,
-                  "1": 0.0,
+                  "1": -0.0,
+                  "2": -0.0,
                   "4": -0.0
                 }
               }
@@ -564,7 +379,139 @@
               "feasible": true,
               "reason": "",
               "diagnostics": {
-                "support": 3
+                "support": 1
+              }
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "block": 0,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "1": -0.0,
+                  "2": -0.0,
+                  "4": 0.0,
+                  "0": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 4,
+          "block": 3,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "1": 0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "0": 0.0,
+                  "3": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 1
+              }
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "block": 5,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "1": 0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "0": -0.0,
+                  "3": 0.0,
+                  "5": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 4
               }
             }
           ]

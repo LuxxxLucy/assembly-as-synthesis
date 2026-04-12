@@ -258,20 +258,44 @@ def find_minimal_support_set(
         return []
 
     # Check if block_id is stable with ALL blocks present (full structure)
-    # We use all_block_ids (not just neighbors) to avoid cascading instability
-    # from other blocks that are themselves missing supports
     full_result = check_stability(structure, all_block_ids, friction=friction)
     if not full_result.feasible:
-        # Structure is globally infeasible even when complete — truly infeasible
-        return absent_neighbors  # return all as conservative constraint
+        return absent_neighbors  # globally infeasible — return all as conservative constraint
 
-    # Greedily minimize: try removing each absent neighbor, keep only necessary ones
-    necessary = list(absent_neighbors)
-    for nb in absent_neighbors:
-        trial = [b for b in necessary if b != nb]
-        test_set = list(placed_set) + trial + [block_id]
-        result = check_stability(structure, test_set, friction=friction)
-        if result.feasible:
-            necessary = trial  # nb is redundant, remove it
+    # Filter to neighbors that could plausibly *support* block_id — i.e., whose top
+    # edge lies at or below block_id's bottom edge (within tol). Blocks above
+    # block_id cannot supply upward support; obstructing blocks above are the
+    # kinematic verifier's job. This prevents spurious constraints like
+    # `top_block ≺ middle_block` that create false cycles.
+    block = structure.block_by_id(block_id)
+    block_bottom = float(block.vertices[:, 1].min())
+
+    support_candidates: list[int] = []
+    for nb_id in absent_neighbors:
+        nb = structure.block_by_id(nb_id)
+        nb_top = float(nb.vertices[:, 1].max())
+        if nb_top <= block_bottom + 1e-3:
+            support_candidates.append(nb_id)
+
+    # If no below-neighbors exist, the block has no absent supports below.
+    # Fall back to the full absent-neighbor set (e.g., lateral thrust cases
+    # like arch voussoirs, where support is sideways not downward).
+    if not support_candidates:
+        support_candidates = absent_neighbors
+
+    # Greedily minimize: try removing each support candidate and see if block_id
+    # is still stable in the remaining full structure minus that neighbor.
+    necessary: list[int] = []
+    for nb in support_candidates:
+        trial_ids = [b for b in all_block_ids if b != nb]
+        result = check_stability(structure, trial_ids, friction=friction)
+        if not result.feasible:
+            necessary.append(nb)
+
+    # If the minimization removed everything but the block still isn't stable
+    # at the current step, keep the full set — one of them is load-bearing even
+    # if no individual removal flips the full structure.
+    if not necessary:
+        necessary = support_candidates
 
     return necessary

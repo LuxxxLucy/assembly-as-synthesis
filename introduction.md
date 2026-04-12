@@ -1,207 +1,171 @@
-# Counterplan: When Assembly Fails, Fix the Geometry
+# counterplan — assembly planning as program synthesis
 
 > Assembly planning asks: *in what order can we build this?*
 > We ask the next question: *when no order works, what is the smallest change that makes one possible?*
 
 ---
 
-## The Problem
+## The problem
 
-Consider a stone arch. Once all the stones are in place, the arch is perfectly stable — compressive forces flow along the curved path and hold everything together. But try to build it one stone at a time: each stone you place on the side will topple over, because it needs the stone on the other side to push against. The arch is stable when *complete*, yet **impossible to build** sequentially.
+Consider a stone arch. Once all the stones are in place, the arch is perfectly stable — compressive forces flow along the curved path and hold everything together. Try to build it one stone at a time, though, and each stone placed on the side topples: it needs the stone on the other side to push back. The arch is stable when *complete* but **impossible to build** sequentially.
 
-This is not a planning failure. It is a geometric property of the structure itself. Every possible assembly order fails, because some intermediate step requires blocks that haven't been placed yet.
+This is not a planning failure; it is a geometric property of the structure. Every possible assembly order fails, because some intermediate step requires blocks that haven't been placed yet. Existing assembly planners (ASAP, Assemble Them All, Wang et al. 2025) assume such an order exists and search for it. When none exists they report failure and stop.
 
-Existing assembly planners (ASAP, Assemble Them All, Wang et al. 2025) assume a feasible assembly order exists. They search for it. When none exists, they report failure and stop.
+Counterplan addresses the complementary problem: **when no feasible sequence exists, what is the minimal modification that creates one?** Two strategies:
 
-We address the complementary problem: **when no feasible sequence exists, what is the minimal modification that creates one?** Two strategies:
-
-1. **Scaffolding** — add temporary supports (like the wooden centering used in real arch construction)
-2. **Geometry repair** — make small adjustments to the block shapes so a feasible order becomes possible
+1. **Scaffolding** — add temporary supports (wooden centering, as real arches use).
+2. **Geometry repair** — small adjustments to the block shapes so a feasible order becomes possible.
 
 ---
 
-## How CEGIS Works
+## The algorithm (faithful account)
 
-CEGIS stands for **Counterexample-Guided Inductive Synthesis**, a technique from program synthesis (Solar-Lezama, 2008). The core idea: instead of searching through all possible solutions, we *learn from failures*.
+### CEGIS with an extensible verifier chain
 
-### The Loop
+CEGIS stands for **Counterexample-Guided Inductive Synthesis** (Solar-Lezama 2008). Instead of enumerating all possible assembly orders, we learn from failed ones. Each CEGIS round:
 
 ```
-1. PROPOSE a candidate assembly order
-   (random permutation, but consistent with what we've learned so far)
+1. PROPOSE a candidate order
+   Kahn's topological sort with random tie-breaking, constrained by the precedence
+   constraints learned so far. If the constraint graph has a cycle, we return
+   INFEASIBLE — no order can satisfy all constraints.
 
-2. VERIFY each step by physics simulation:
-   "If I place these blocks in this order, does each intermediate
-    configuration stay standing?"
+2. VERIFY each placement step with a chain of verifiers.
+   The chain is the extension point: each verifier contributes its own class of
+   precedence constraints. Default chain (cheapest-first):
 
-   → We check this with a Linear Program (LP). Given the blocks placed
-     so far and their contact geometry, do feasible contact forces exist
-     that satisfy:
-       - Force balance (the block doesn't accelerate)
-       - Moment balance (the block doesn't rotate)
-       - Compression only (blocks push, never pull)
-       - Friction limits (blocks don't slide)
+     (i)   KinematicVerifier   — fall-path clearance
+             Build the block's swept volume along the descent direction
+             (gravity, or arbitrary per-block direction). If any already-placed
+             block intersects that sweep, the block cannot be brought into
+             position — learn B ≺ blocker.
 
-3. On FAILURE at step k (block B is unstable):
-   GENERALIZE — don't just reject this one ordering.
-   Ask: "What blocks are MISSING that block B needs for support?"
+     (ii)  StabilityVerifier   — static equilibrium
+             Solve an LP: do feasible contact forces exist under gravity
+             satisfying force balance, moment balance, compression-only,
+             and friction cone? On infeasibility, call find_minimal_support_set
+             to identify absent below-neighbors whose presence would restore
+             stability — learn {supports} ≺ B.
 
-   → We identify the minimal set of absent blocks whose presence
-     would make B stable. These become PRECEDENCE CONSTRAINTS:
-     "block X must be placed before block B."
+     (iii) LandingVerifier     — block actually settles at target
+             Translate the block a small ε along the descent direction and
+             check it intersects the ground or a placed block. If not, the
+             target is unsupported and the block would fall past it — learn
+             below-neighbors ≺ B.
 
-4. REPEAT with the new constraints. Each constraint eliminates
-   an exponential family of orderings (not just one).
+3. On the first verifier failure at step k: record precedence constraints,
+   break out of the step loop, propose a new order next round.
 
-5. TERMINATE when either:
-   - A feasible sequence is found (SUCCESS), or
-   - The constraints form a CYCLE (A must come before B, and B must
-     come before A) — proving no sequential order exists (INFEASIBLE).
+4. TERMINATE on success (feasible sequence) or cycle (INFEASIBLE).
 ```
 
-### Why This is Efficient
+Each verifier returns `VerifierResult(feasible, new_constraints, diagnostics)`. Adding a new verifier (robot reach, footprint, no-flip, reorientation cost) is a drop-in extension — no changes to the CEGIS loop or trace format.
 
-A 10-block pyramid has 10! = 3,628,800 possible assembly orderings. Brute force checks each one. CEGIS solves it in **2 rounds**:
-- Round 1: tries placing top blocks first → fails → learns "bottom row must come first"
-- Round 2: respects the constraint → succeeds immediately
+In practice on the current demo set, stability and kinematic do all the constraint-learning work — landing is dominated (whenever it would fire, stability has already rejected the step). Landing is kept in the chain as a cheap independent sanity check and as a template for how a third kind of verifier integrates.
 
-The key insight is **counterexample generalization**: one failure doesn't just eliminate one bad ordering — it eliminates all orderings that make the same structural mistake. This is analogous to **clause learning in SAT solvers** (CDCL), where a single conflict prunes exponential regions of the search space.
+### Why the chain needed three verifiers
 
-### Constraint Learning via LP Dual
+Stability-only CEGIS was incorrect: it accepted sequences that are stable in their final state but physically unconstructible because later blocks block the drop path of earlier ones. For example, placing a row-2 block before the row-1 block beneath it: stability says "row-2 block rests fine on row-0 blocks at the sides"; reality says "the row-1 block can no longer descend into its slot because row-2 is on top." The kinematic verifier catches exactly this.
 
-When block B fails at step k, the LP (stability check) is infeasible. To identify which missing blocks would help, we:
+Landing is the symmetric sanity check: the block must not just *be placed in equilibrium* (stability), it must *physically arrive* at the target position by falling (landing). The three verifiers together approximate the three requirements of a real pick-and-place: reachable path, stable equilibrium at target, and target is actually a landing spot.
 
-1. Find all neighbors of B in the full structure (from the contact graph)
-2. Identify which neighbors are absent (not yet placed)
-3. Check: adding ALL absent neighbors — does B become stable?
-4. If yes, greedily minimize: remove each neighbor one at a time, keeping only those whose removal breaks stability
+### Counterexample generalization (stability case)
 
-This produces the **minimal support set** — the tightest possible precedence constraints, pruning the maximum number of orderings per round.
+When stability fails for block B with blocks `placed` already down, we don't just reject this one ordering — we extract a **minimal support set**: the smallest subset of absent blocks that must precede B for stability. Procedure in `find_minimal_support_set`:
 
----
+1. Enumerate B's neighbors from the full-structure contact graph.
+2. Filter to *below-neighbors* (top edge at or under B's bottom edge). Above-neighbors cannot structurally support; they can only obstruct — which the kinematic verifier handles. If no below-neighbors exist (lateral-thrust cases: arch voussoirs push sideways, not downward), fall back to all absent neighbors.
+3. Greedy minimization: for each candidate, test whether `structure minus candidate` still leaves B stable. If yes, `candidate` is redundant.
+4. Return the remaining necessary neighbors as precedence constraints `necessary ≺ B`.
 
-## Test Structures
+This is the analogue of **CDCL clause learning**: one conflict prunes an exponential region of the permutation space, not just one order. A 10-block pyramid has 3,628,800 orderings; CEGIS converges in ~7 rounds, learning ~10 precedence constraints total.
 
-We provide a gallery of structures spanning three regimes:
-
-### Feasible Structures (valid assembly orders exist)
-
-| Structure | Blocks | Orderings | CEGIS Rounds |
-|-----------|:------:|:---------:|:------------:|
-| Wall | 4 | 24 | 1 |
-| Pyramid (6) | 6 | 720 | 2 |
-| **Pyramid (10)** | 10 | 3,628,800 | **2** |
-| **Post & Lintel** | 5 | 120 | 3 |
-
-The **Post & Lintel** (Stonehenge-like: two columns + spanning beam) demonstrates clean constraint learning: CEGIS quickly learns "columns before lintel."
-
-The **Pyramid (10)** shows CEGIS efficiency at scale: 3.6M orderings, solved in 2 rounds.
-
-### Infeasible Structures (cyclic dependencies, need scaffolding)
-
-| Structure | Blocks | Detected In | Cycle |
-|-----------|:------:|:-----------:|-------|
-| Semicircular Arch | 5 | 3 rounds | voussoirs need mutual support |
-| **Gothic Pointed Arch** | 9 | 2 rounds | high thrust, steep geometry |
-
-The **Gothic Pointed Arch** has two circular arcs meeting at a peak. The pointed geometry creates high horizontal thrust — voussoirs can't stand without lateral compression from their neighbors, creating mutual dependencies that CEGIS detects as cycles.
+The analogy is not exact: CDCL clauses are derived by resolution and are logically minimal; our precedence constraints are *sound but potentially conservative* (the true requirement may be "A or C must support B," we learn the stronger "A ≺ B"). This is documented in `verify.md` (Claim 5).
 
 ---
 
-## Scaffolding Synthesis (CEGIS-squared)
-
-When CEGIS proves a structure is infeasible (cyclic constraints), we don't stop. We add **temporary support blocks** — scaffolding — that break the cycle.
-
-The algorithm is itself a CEGIS loop (hence "CEGIS-squared"):
+## Code structure
 
 ```
-OUTER LOOP: synthesize scaffold configurations
-  1. Find blocks involved in cyclic constraints
-  2. Generate candidate scaffolds (vertical columns from ground
-     to the underside of each cycle block)
-  3. INNER LOOP: run CEGIS on the augmented structure
-     (original blocks + scaffolds)
-  4. VERIFY: after all blocks are placed, is the structure
-     self-supporting WITHOUT the scaffolds?
-     (One LP check on the complete structure minus scaffolds)
-  5. If yes → return the sequence + scaffold removal plan
-     If no → try more/different scaffolds
+assembly-as-synthesis/
+├── src/counterplan/
+│   ├── geometry.py           # Block, Contact, Structure; polygonal contact detection
+│   ├── stability.py          # LP solver + find_minimal_support_set (Scipy linprog/HiGHS)
+│   ├── cegis.py              # Main loop; verifier-chain-agnostic
+│   ├── verifiers/            # The extension point
+│   │   ├── base.py           # Verifier protocol, VerifierResult, PrecedenceConstraint
+│   │   ├── kinematic.py      # Fall-path sweep intersection (shapely)
+│   │   ├── stability.py      # LP wrapper
+│   │   └── landing.py        # ε-downward probe for target-landing
+│   ├── structures.py         # Pre-built demos (arch, pyramid, wall, …)
+│   ├── repair.py             # Heuristic vertex perturbation for infeasible structures
+│   ├── scaffolding.py        # CEGIS-squared: synthesise temporary supports
+│   ├── viz.py                # Matplotlib 2D renders (legacy, still used by examples/demo.py)
+│   └── trace.py              # JSON export — the ONLY bridge from algorithm to web viz
+├── examples/
+│   ├── demo.py               # Matplotlib gallery + repair demos
+│   └── export_traces.py      # Rebuilds web/data/*.json from current structures
+├── tests/
+│   └── test_kinematic.py     # Unit + integration tests for the verifier chain
+└── web/
+    ├── index.html            # Single-file, importmap-based Three.js demo
+    ├── app.js                # 3D viewer (consumes trace JSON; zero algorithm logic)
+    ├── style.css             # Polar Void palette
+    └── data/*.json           # Pre-computed traces (schema: counterplan-trace/2)
 ```
 
-This mirrors real masonry construction: arches are built on wooden **centering** (temporary curved formwork). Once the keystone is placed and the arch is complete, the centering is removed — the arch supports itself through compression.
+**Separation of algorithm and visualization.** The Python package produces a `CEGISResult`. `trace.py` serialises it to JSON with a schema tag. The web viewer parses that JSON and has no other contract with the solver — replace the solver, keep the viewer, or vice versa. The JSON includes per-step verifier results so the viewer can colour constraint arrows by source (kinematic = sand, stability = terracotta, landing = gray).
 
-**Result on Semicircular Arch (5 blocks):**
-- Original CEGIS: 3 rounds → INFEASIBLE (cyclic constraints 2≺3 and 3≺2)
-- With 2 scaffold columns: CEGIS finds sequence in 2 rounds
-- Removal verification: complete arch is self-supporting ✓
+**3D viewer.** `web/app.js` uses `THREE.ExtrudeGeometry` to turn each 2D polygon into an extruded prism along z. Blocks drop in from +y with ease-out cubic, failed blocks tumble off (visible gravity), precedence constraints render as coloured bezier-tube arcs between block centroids. The aesthetic is a stacking-game: each block falls into its target; unstable proposals literally fall away. Styling follows the Polar Void palette (cold, near-neutral, architectural).
 
 ---
 
-## Visualization
+## Test structures
 
-### Animated CEGIS Replay
-
-The negotiation replay shows the CEGIS loop as an animation:
-- **Propose**: ghost blocks appear in target positions
-- **Place**: blocks descend into position one by one (terracotta → blue)
-- **Fail**: unstable block flashes red
-- **Learn**: constraint arrows appear between blocks
-- **Rewind**: blocks fade out in reverse order
-- **Retry**: new round begins with updated constraints
-
-Available as:
-- **MP4/GIF** via matplotlib animation (`animate_negotiation_replay()`)
-- **Interactive web viewer** (`web/index.html` — open in browser, arrow keys to step through)
-
-### Color Palette: Polar Void
-
-Cold, austere, near-neutral — inspired by the Obsidian Velocity theme:
-- Background: `#1A1D23` (near-black, cold blue undertone)
-- Blocks: `#7BA4C7` (steel blue)
-- Active block: `#D97757` (Anthropic terracotta)
-- Failure: `#BF616A` (muted red)
-- Success: `#8FBCA3` (sage green)
-- Typography: Inter (body) + JetBrains Mono (code/labels)
-
----
-
-## Comparison
-
-| System | Fixed geometry | Scaffolding | Geometry repair |
-|--------|:---:|:---:|:---:|
-| ASAP (MIT, ICRA 2024) | ✓ (50+ parts) | — | — |
-| Assemble Them All (Autodesk, SIG Asia 2022) | ✓ (80+ parts) | — | — |
-| Wang et al. (SIGGRAPH 2025) | ✓ (RL-based) | — | — |
-| **Counterplan** | ✓ (via CEGIS) | **✓** | **✓** |
-
-We are not competing on scale. The contribution is the **co-design loop**: when planning fails, the failure certificate becomes actionable — either scaffolding synthesis or geometry repair.
-
----
-
-## Current Limitations
-
-- **2D only.** 3D contact detection + stability generalizes (same LP formulation), but not yet implemented.
-- **Scaffolding placement is heuristic** — vertical columns under cycle blocks. A gradient-based approach using the LP dual could find optimal placement.
-- **Constraint learning is greedy** — finds a minimal support set but not necessarily the strongest possible constraint. The LP Farkas certificate could guide tighter cuts (analogous to 1-UIP in CDCL SAT solvers).
-- **Scale.** Tested on 4–10 blocks. The counterexample generalization should keep CEGIS efficient up to ~20 blocks (contact graphs are sparse), but this is unvalidated.
-- **Gothic arch scaffolding fails** — the pointed geometry creates non-trivial force paths that simple column scaffolds don't resolve. Curved centering (matching the intrados) would work but requires multi-block scaffold representation.
+| Structure | Blocks | Feasible? | Why |
+|-----------|:------:|:---------:|-----|
+| Wall 4    | 4  | ✓ | Trivial bottom-up |
+| Pyramid 6 | 6  | ✓ | Bottom-up, 2 CEGIS rounds |
+| **Pyramid 10** | 10 | ✓ | 3.6M orderings, solves in ~7 rounds; requires **kinematic** constraints to reject mid-row inversions |
+| Post & Lintel | 5 | ✓ | Learns "columns ≺ lintel" in 3 rounds |
+| Arch 5    | 5  | ✗ | Cyclic stability — voussoirs need mutual thrust |
+| Arch 7    | 7  | ✗ | Same cycle, larger |
+| Gothic Arch 9 | 9 | ✗ | Pointed geometry, high horizontal thrust |
+| Unstable Tower | 3 | (LP-feasible) | Narrow-base inverted pyramid — flagged for repair |
+| Cantilever 5 | 5 | ✗ | Progressive overhangs — flagged for repair |
 
 ---
 
 ## Running
 
 ```bash
-# Python demos (matplotlib output)
 cd projects/2026-03-assembly-as-synthesis/assembly-as-synthesis
-uv run python examples/demo.py
 
-# Web viewer (open in browser)
+# Run tests
+uv run --with pytest pytest tests/ -v
+
+# Regenerate traces for the web viewer (runs CEGIS on every demo with seed=42)
+uv run python examples/export_traces.py
+
+# Launch the viewer
 cd web && python -m http.server 8080
-# → http://localhost:8080
+# → open http://localhost:8080
 ```
 
-~1200 lines of Python. Dependencies: numpy, scipy, matplotlib, shapely.
+`export_traces.py` hardcodes `seed=42` so traces are reproducible. Pass a different seed (or remove it) to explore alternative feasible orderings.
+
+Arrow keys step through frames; space toggles playback; drag to orbit.
 
 ---
 
-*counterplan v0.2 — April 2026*
+## Current limitations
+
+- **2D only.** The algorithm is planar; the web viewer extrudes for visual 3D. A true 3D contact/stability generalisation is future work.
+- **Scaffolding and repair do not yet consume kinematic/landing constraints** — they were written against the stability-only interface. Extending them to the full chain is straightforward (the constraint set already carries `source` tags) but not done.
+- **Greedy support-set minimisation** is sound but not guaranteed minimal (see verify.md Claim 5). A Farkas-certificate-guided version could produce tighter constraints.
+- **Gothic arch scaffolding fails** — curved centring needed, not simple columns.
+- **Scale unvalidated above ~10 blocks.** Contact graphs are sparse, so CEGIS should stay efficient to ~20 blocks, but this is not yet tested.
+
+---
+
+*counterplan v0.3 — April 2026. ~1,400 LOC Python, ~400 LOC JS. Dependencies: numpy, scipy, shapely, matplotlib; Three.js via CDN.*

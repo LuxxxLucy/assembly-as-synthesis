@@ -1,5 +1,6 @@
 {
-  "name": "Pyramid (10 blocks)",
+  "schema": "counterplan-trace/2",
+  "name": "pyramid_10",
   "structure": {
     "blocks": [
       {
@@ -22,11 +23,12 @@
             1.0
           ]
         ],
-        "mass": 1.5,
         "centroid": [
           -2.25,
           0.5
-        ]
+        ],
+        "mass": 1.5,
+        "depth": 1.0
       },
       {
         "id": 1,
@@ -48,11 +50,12 @@
             1.0
           ]
         ],
-        "mass": 1.5,
         "centroid": [
           -0.75,
           0.5
-        ]
+        ],
+        "mass": 1.5,
+        "depth": 1.0
       },
       {
         "id": 2,
@@ -74,11 +77,12 @@
             1.0
           ]
         ],
-        "mass": 1.5,
         "centroid": [
           0.75,
           0.5
-        ]
+        ],
+        "mass": 1.5,
+        "depth": 1.0
       },
       {
         "id": 3,
@@ -100,11 +104,12 @@
             1.0
           ]
         ],
-        "mass": 1.5,
         "centroid": [
           2.25,
           0.5
-        ]
+        ],
+        "mass": 1.5,
+        "depth": 1.0
       },
       {
         "id": 4,
@@ -126,11 +131,12 @@
             2.0
           ]
         ],
-        "mass": 1.0,
         "centroid": [
           -1.5,
           1.5
-        ]
+        ],
+        "mass": 1.0,
+        "depth": 1.0
       },
       {
         "id": 5,
@@ -152,11 +158,12 @@
             2.0
           ]
         ],
-        "mass": 1.0,
         "centroid": [
           -0.0,
           1.5
-        ]
+        ],
+        "mass": 1.0,
+        "depth": 1.0
       },
       {
         "id": 6,
@@ -178,11 +185,12 @@
             2.0
           ]
         ],
-        "mass": 1.0,
         "centroid": [
           1.5,
           1.5
-        ]
+        ],
+        "mass": 1.0,
+        "depth": 1.0
       },
       {
         "id": 7,
@@ -204,11 +212,12 @@
             3.0
           ]
         ],
-        "mass": 1.0,
         "centroid": [
           -0.75,
           2.5
-        ]
+        ],
+        "mass": 1.0,
+        "depth": 1.0
       },
       {
         "id": 8,
@@ -230,11 +239,12 @@
             3.0
           ]
         ],
-        "mass": 1.0,
         "centroid": [
           0.75,
           2.5
-        ]
+        ],
+        "mass": 1.0,
+        "depth": 1.0
       },
       {
         "id": 9,
@@ -256,30 +266,37 @@
             4.0
           ]
         ],
-        "mass": 1.0,
         "centroid": [
           -0.0,
           3.5
-        ]
+        ],
+        "mass": 1.0,
+        "depth": 1.0
       }
     ],
-    "ground_y": 0.0
+    "ground_y": 0.0,
+    "extents": {
+      "min_x": -3.0,
+      "max_x": 3.0,
+      "min_y": 0.0,
+      "max_y": 4.0
+    }
   },
   "result": {
     "feasible": true,
     "sequence": [
-      0,
-      1,
       2,
-      4,
-      5,
       3,
-      8,
+      1,
       6,
-      9,
-      7
+      5,
+      8,
+      0,
+      4,
+      7,
+      9
     ],
-    "total_rounds": 2
+    "total_rounds": 7
   },
   "rounds": [
     {
@@ -298,49 +315,132 @@
       ],
       "failure_step": 2,
       "failed_block": 6,
+      "failed_verifier": "stability",
       "steps": [
         {
           "step": 0,
           "block": 1,
-          "placed": [
-            1
-          ],
-          "stable": true,
-          "margin": 0.49999999999999994,
-          "block_margins": {
-            "1": 0.49999999999999994
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.49999999999999994,
+                "block_margins": {
+                  "1": 0.49999999999999994
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
         },
         {
           "step": 1,
           "block": 0,
-          "placed": [
-            1,
-            0
-          ],
-          "stable": true,
-          "margin": -0.0,
-          "block_margins": {
-            "1": -0.0,
-            "0": -0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "1": -0.0,
+                  "0": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
         },
         {
           "step": 2,
           "block": 6,
-          "placed": [
-            1,
-            0,
-            6
-          ],
-          "stable": false,
-          "margin": -1.0
+          "feasible": false,
+          "failed_verifier": "stability",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": false,
+              "reason": "block 6 unstable without [2, 3]",
+              "diagnostics": {
+                "feasible": false,
+                "margin": null,
+                "block_margins": null
+              }
+            }
+          ]
         }
       ],
       "constraints_learned": [
         {
+          "before": 2,
+          "after": 6,
+          "source": "stability",
+          "reason": "2 must support 6"
+        },
+        {
           "before": 3,
-          "after": 6
+          "after": 6,
+          "source": "stability",
+          "reason": "3 must support 6"
         }
       ]
     },
@@ -358,218 +458,1348 @@
         9,
         7
       ],
-      "failure_step": null,
-      "failed_block": null,
+      "failure_step": 7,
+      "failed_block": 6,
+      "failed_verifier": "kinematic",
       "steps": [
         {
           "step": 0,
           "block": 0,
-          "placed": [
-            0
-          ],
-          "stable": true,
-          "margin": 0.49999999999999994,
-          "block_margins": {
-            "0": 0.49999999999999994
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.49999999999999994,
+                "block_margins": {
+                  "0": 0.49999999999999994
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
         },
         {
           "step": 1,
           "block": 1,
-          "placed": [
-            0,
-            1
-          ],
-          "stable": true,
-          "margin": -0.0,
-          "block_margins": {
-            "0": -0.0,
-            "1": -0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "0": -0.0,
+                  "1": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
         },
         {
           "step": 2,
           "block": 2,
-          "placed": [
-            0,
-            1,
-            2
-          ],
-          "stable": true,
-          "margin": -0.0,
-          "block_margins": {
-            "0": -0.0,
-            "1": -0.0,
-            "2": -0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "0": -0.0,
+                  "1": -0.0,
+                  "2": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
         },
         {
           "step": 3,
           "block": 4,
-          "placed": [
-            0,
-            1,
-            2,
-            4
-          ],
-          "stable": true,
-          "margin": 0.0,
-          "block_margins": {
-            "0": 0.0,
-            "1": 0.0,
-            "2": -0.0,
-            "4": -0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "0": 0.0,
+                  "1": 0.0,
+                  "2": -0.0,
+                  "4": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 0
+              }
+            }
+          ]
         },
         {
           "step": 4,
           "block": 5,
-          "placed": [
-            0,
-            1,
-            2,
-            4,
-            5
-          ],
-          "stable": true,
-          "margin": 0.0,
-          "block_margins": {
-            "0": 0.0,
-            "1": 0.0,
-            "2": 0.0,
-            "4": 0.0,
-            "5": 0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "0": 0.0,
+                  "1": 0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "5": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 1
+              }
+            }
+          ]
         },
         {
           "step": 5,
           "block": 3,
-          "placed": [
-            0,
-            1,
-            2,
-            4,
-            5,
-            3
-          ],
-          "stable": true,
-          "margin": 0.0,
-          "block_margins": {
-            "0": 0.0,
-            "1": 0.0,
-            "2": 0.0,
-            "4": 0.0,
-            "5": 0.0,
-            "3": -0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "0": 0.0,
+                  "1": 0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "5": 0.0,
+                  "3": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
         },
         {
           "step": 6,
           "block": 8,
-          "placed": [
-            0,
-            1,
-            2,
-            4,
-            5,
-            3,
-            8
-          ],
-          "stable": true,
-          "margin": 0.0,
-          "block_margins": {
-            "0": 0.0,
-            "1": 0.0,
-            "2": 0.0,
-            "4": 0.0,
-            "5": 0.0,
-            "3": -0.0,
-            "8": -0.0
-          }
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "0": 0.0,
+                  "1": 0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "5": 0.0,
+                  "3": -0.0,
+                  "8": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 5
+              }
+            }
+          ]
         },
         {
           "step": 7,
           "block": 6,
-          "placed": [
-            0,
-            1,
-            2,
-            4,
-            5,
-            3,
-            8,
-            6
-          ],
-          "stable": true,
-          "margin": -0.0,
-          "block_margins": {
-            "0": -0.0,
-            "1": -0.0,
-            "2": 0.0,
-            "4": 0.0,
-            "5": 0.0,
-            "3": -0.0,
-            "8": 0.0,
-            "6": 0.0
-          }
+          "feasible": false,
+          "failed_verifier": "kinematic",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": false,
+              "reason": "block 6 collides with [8] on descent",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": [
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 6,
+          "after": 8,
+          "source": "kinematic",
+          "reason": "8 blocks descent of 6"
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "candidate": [
+        9,
+        4,
+        2,
+        0,
+        3,
+        6,
+        7,
+        5,
+        1,
+        8
+      ],
+      "failure_step": 0,
+      "failed_block": 9,
+      "failed_verifier": "stability",
+      "steps": [
+        {
+          "step": 0,
+          "block": 9,
+          "feasible": false,
+          "failed_verifier": "stability",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": false,
+              "reason": "block 9 unstable without [8, 7]",
+              "diagnostics": {
+                "feasible": false,
+                "margin": null,
+                "block_margins": null
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 8,
+          "after": 9,
+          "source": "stability",
+          "reason": "8 must support 9"
+        },
+        {
+          "before": 7,
+          "after": 9,
+          "source": "stability",
+          "reason": "7 must support 9"
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "candidate": [
+        7,
+        2,
+        0,
+        1,
+        4,
+        3,
+        6,
+        8,
+        9,
+        5
+      ],
+      "failure_step": 0,
+      "failed_block": 7,
+      "failed_verifier": "stability",
+      "steps": [
+        {
+          "step": 0,
+          "block": 7,
+          "feasible": false,
+          "failed_verifier": "stability",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": false,
+              "reason": "block 7 unstable without [4, 5]",
+              "diagnostics": {
+                "feasible": false,
+                "margin": null,
+                "block_margins": null
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 4,
+          "after": 7,
+          "source": "stability",
+          "reason": "4 must support 7"
+        },
+        {
+          "before": 5,
+          "after": 7,
+          "source": "stability",
+          "reason": "5 must support 7"
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "candidate": [
+        5,
+        3,
+        0,
+        2,
+        1,
+        6,
+        8,
+        4,
+        7,
+        9
+      ],
+      "failure_step": 0,
+      "failed_block": 5,
+      "failed_verifier": "stability",
+      "steps": [
+        {
+          "step": 0,
+          "block": 5,
+          "feasible": false,
+          "failed_verifier": "stability",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": false,
+              "reason": "block 5 unstable without [1, 2]",
+              "diagnostics": {
+                "feasible": false,
+                "margin": null,
+                "block_margins": null
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 1,
+          "after": 5,
+          "source": "stability",
+          "reason": "1 must support 5"
+        },
+        {
+          "before": 2,
+          "after": 5,
+          "source": "stability",
+          "reason": "2 must support 5"
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "candidate": [
+        1,
+        3,
+        0,
+        2,
+        4,
+        6,
+        8,
+        5,
+        7,
+        9
+      ],
+      "failure_step": 7,
+      "failed_block": 5,
+      "failed_verifier": "kinematic",
+      "steps": [
+        {
+          "step": 0,
+          "block": 1,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.49999999999999994,
+                "block_margins": {
+                  "1": 0.49999999999999994
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 1,
+          "block": 3,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.49999999999999994,
+                "block_margins": {
+                  "1": 0.49999999999999994,
+                  "3": 0.49999999999999994
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "block": 0,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "1": 0.0,
+                  "3": 0.49999999999999994,
+                  "0": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "block": 2,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "1": -0.0,
+                  "3": -0.0,
+                  "0": -0.0,
+                  "2": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 4,
+          "block": 4,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "1": -0.0,
+                  "3": -0.0,
+                  "0": -0.0,
+                  "2": -0.0,
+                  "4": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 1
+              }
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "block": 6,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "1": -0.0,
+                  "3": -0.0,
+                  "0": -0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "6": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 3
+              }
+            }
+          ]
+        },
+        {
+          "step": 6,
+          "block": 8,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "1": 0.0,
+                  "3": -0.0,
+                  "0": 0.0,
+                  "2": 0.0,
+                  "4": 0.0,
+                  "6": 0.0,
+                  "8": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 6
+              }
+            }
+          ]
+        },
+        {
+          "step": 7,
+          "block": 5,
+          "feasible": false,
+          "failed_verifier": "kinematic",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": false,
+              "reason": "block 5 collides with [8] on descent",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": [
+                  8
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 5,
+          "after": 8,
+          "source": "kinematic",
+          "reason": "8 blocks descent of 5"
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "candidate": [
+        2,
+        3,
+        1,
+        6,
+        5,
+        8,
+        0,
+        4,
+        7,
+        9
+      ],
+      "failure_step": null,
+      "failed_block": null,
+      "failed_verifier": null,
+      "steps": [
+        {
+          "step": 0,
+          "block": 2,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.49999999999999994,
+                "block_margins": {
+                  "2": 0.49999999999999994
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 1,
+          "block": 3,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "2": -0.0,
+                  "3": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "block": 1,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "2": -0.0,
+                  "3": -0.0,
+                  "1": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "block": 6,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "2": -0.0,
+                  "3": -0.0,
+                  "1": -0.0,
+                  "6": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 2
+              }
+            }
+          ]
+        },
+        {
+          "step": 4,
+          "block": 5,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "2": 0.0,
+                  "3": 0.0,
+                  "1": 0.0,
+                  "6": 0.0,
+                  "5": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 2
+              }
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "block": 8,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "2": 0.0,
+                  "3": 0.0,
+                  "1": -0.0,
+                  "6": 0.0,
+                  "5": 0.0,
+                  "8": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 6
+              }
+            }
+          ]
+        },
+        {
+          "step": 6,
+          "block": 0,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "2": -0.0,
+                  "3": -0.0,
+                  "1": 0.0,
+                  "6": 0.0,
+                  "5": 0.0,
+                  "8": 0.0,
+                  "0": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 7,
+          "block": 4,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "2": -0.0,
+                  "3": -0.0,
+                  "1": 0.0,
+                  "6": 0.0,
+                  "5": 0.0,
+                  "8": 0.0,
+                  "0": -0.0,
+                  "4": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 1
+              }
+            }
+          ]
         },
         {
           "step": 8,
-          "block": 9,
-          "placed": [
-            0,
-            1,
-            2,
-            4,
-            5,
-            3,
-            8,
-            6,
-            9
-          ],
-          "stable": true,
-          "margin": 0.0,
-          "block_margins": {
-            "0": 0.0,
-            "1": 0.0,
-            "2": 0.0,
-            "4": -0.0,
-            "5": 0.0,
-            "3": -0.0,
-            "8": -0.0,
-            "6": 0.0,
-            "9": -0.0
-          }
+          "block": 7,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.0,
+                "block_margins": {
+                  "2": 0.0,
+                  "3": 0.0,
+                  "1": 0.0,
+                  "6": 0.0,
+                  "5": 0.0,
+                  "8": -0.0,
+                  "0": 0.0,
+                  "4": 0.0,
+                  "7": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 5
+              }
+            }
+          ]
         },
         {
           "step": 9,
-          "block": 7,
-          "placed": [
-            0,
-            1,
-            2,
-            4,
-            5,
-            3,
-            8,
-            6,
-            9,
-            7
-          ],
-          "stable": true,
-          "margin": -0.0,
-          "block_margins": {
-            "0": -0.0,
-            "1": -0.0,
-            "2": 0.0,
-            "4": 0.0,
-            "5": 0.0,
-            "3": -0.0,
-            "8": 0.0,
-            "6": 0.0,
-            "9": 0.0,
-            "7": -0.0
-          }
+          "block": 9,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "2": -0.0,
+                  "3": -0.0,
+                  "1": 0.0,
+                  "6": 0.0,
+                  "5": 0.0,
+                  "8": 0.0,
+                  "0": -0.0,
+                  "4": 0.0,
+                  "7": 0.0,
+                  "9": 0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 8
+              }
+            }
+          ]
         }
       ],
       "constraints_learned": []

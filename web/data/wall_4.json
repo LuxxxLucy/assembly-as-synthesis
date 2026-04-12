@@ -1,0 +1,316 @@
+{
+  "schema": "counterplan-trace/2",
+  "name": "wall_4",
+  "structure": {
+    "blocks": [
+      {
+        "id": 0,
+        "vertices": [
+          [
+            -1.5,
+            0.0
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ],
+          [
+            -1.5,
+            1.0
+          ]
+        ],
+        "centroid": [
+          -0.75,
+          0.5
+        ],
+        "mass": 1.0,
+        "depth": 1.0
+      },
+      {
+        "id": 1,
+        "vertices": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            1.5,
+            0.0
+          ],
+          [
+            1.5,
+            1.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ],
+        "centroid": [
+          0.75,
+          0.5
+        ],
+        "mass": 1.0,
+        "depth": 1.0
+      },
+      {
+        "id": 2,
+        "vertices": [
+          [
+            -1.5,
+            1.0
+          ],
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            2.0
+          ],
+          [
+            -1.5,
+            2.0
+          ]
+        ],
+        "centroid": [
+          -0.75,
+          1.5
+        ],
+        "mass": 1.0,
+        "depth": 1.0
+      },
+      {
+        "id": 3,
+        "vertices": [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.5,
+            1.0
+          ],
+          [
+            1.5,
+            2.0
+          ],
+          [
+            0.0,
+            2.0
+          ]
+        ],
+        "centroid": [
+          0.75,
+          1.5
+        ],
+        "mass": 1.0,
+        "depth": 1.0
+      }
+    ],
+    "ground_y": 0.0,
+    "extents": {
+      "min_x": -1.5,
+      "max_x": 1.5,
+      "min_y": 0.0,
+      "max_y": 2.0
+    }
+  },
+  "result": {
+    "feasible": true,
+    "sequence": [
+      0,
+      1,
+      3,
+      2
+    ],
+    "total_rounds": 1
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "candidate": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "failure_step": null,
+      "failed_block": null,
+      "failed_verifier": null,
+      "steps": [
+        {
+          "step": 0,
+          "block": 0,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.5,
+                "block_margins": {
+                  "0": 0.5
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 1,
+          "block": 1,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "0": -0.0,
+                  "1": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "block": 3,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "0": -0.0,
+                  "1": -0.0,
+                  "3": 0.5
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 1
+              }
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "block": 2,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": -0.0,
+                "block_margins": {
+                  "0": -0.0,
+                  "1": -0.0,
+                  "3": -0.0,
+                  "2": -0.0
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 0
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": []
+    }
+  ]
+}

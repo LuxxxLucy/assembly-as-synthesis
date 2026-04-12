@@ -1,0 +1,346 @@
+{
+  "schema": "counterplan-trace/2",
+  "name": "unstable_tower",
+  "structure": {
+    "blocks": [
+      {
+        "id": 0,
+        "vertices": [
+          [
+            -0.5,
+            0.0
+          ],
+          [
+            0.5,
+            0.0
+          ],
+          [
+            0.5,
+            1.0
+          ],
+          [
+            -0.5,
+            1.0
+          ]
+        ],
+        "centroid": [
+          -0.0,
+          0.5
+        ],
+        "mass": 1.0,
+        "depth": 1.0
+      },
+      {
+        "id": 1,
+        "vertices": [
+          [
+            -1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            2.0
+          ],
+          [
+            -1.0,
+            2.0
+          ]
+        ],
+        "centroid": [
+          -0.0,
+          1.5
+        ],
+        "mass": 1.5,
+        "depth": 1.0
+      },
+      {
+        "id": 2,
+        "vertices": [
+          [
+            -2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            3.0
+          ],
+          [
+            -2.0,
+            3.0
+          ]
+        ],
+        "centroid": [
+          -0.0,
+          2.5
+        ],
+        "mass": 2.0,
+        "depth": 1.0
+      }
+    ],
+    "ground_y": 0.0,
+    "extents": {
+      "min_x": -2.0,
+      "max_x": 2.0,
+      "min_y": 0.0,
+      "max_y": 3.0
+    }
+  },
+  "result": {
+    "feasible": true,
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "total_rounds": 3
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "candidate": [
+        2,
+        0,
+        1
+      ],
+      "failure_step": 0,
+      "failed_block": 2,
+      "failed_verifier": "stability",
+      "steps": [
+        {
+          "step": 0,
+          "block": 2,
+          "feasible": false,
+          "failed_verifier": "stability",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": false,
+              "reason": "block 2 unstable without [1]",
+              "diagnostics": {
+                "feasible": false,
+                "margin": null,
+                "block_margins": null
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 1,
+          "after": 2,
+          "source": "stability",
+          "reason": "1 must support 2"
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "candidate": [
+        1,
+        0,
+        2
+      ],
+      "failure_step": 0,
+      "failed_block": 1,
+      "failed_verifier": "stability",
+      "steps": [
+        {
+          "step": 0,
+          "block": 1,
+          "feasible": false,
+          "failed_verifier": "stability",
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": false,
+              "reason": "block 1 unstable without [0]",
+              "diagnostics": {
+                "feasible": false,
+                "margin": null,
+                "block_margins": null
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": [
+        {
+          "before": 0,
+          "after": 1,
+          "source": "stability",
+          "reason": "0 must support 1"
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "candidate": [
+        0,
+        1,
+        2
+      ],
+      "failure_step": null,
+      "failed_block": null,
+      "failed_verifier": null,
+      "steps": [
+        {
+          "step": 0,
+          "block": 0,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.5,
+                "block_margins": {
+                  "0": 0.5
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": "ground"
+              }
+            }
+          ]
+        },
+        {
+          "step": 1,
+          "block": 1,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.5,
+                "block_margins": {
+                  "0": 0.75,
+                  "1": 0.5
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 0
+              }
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "block": 2,
+          "feasible": true,
+          "failed_verifier": null,
+          "verifiers": [
+            {
+              "verifier": "kinematic",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "direction": [
+                  0.0,
+                  -1.0
+                ],
+                "blockers": []
+              }
+            },
+            {
+              "verifier": "stability",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "feasible": true,
+                "margin": 0.5,
+                "block_margins": {
+                  "0": 1.75,
+                  "1": 0.6666666666666667,
+                  "2": 0.5
+                }
+              }
+            },
+            {
+              "verifier": "landing",
+              "feasible": true,
+              "reason": "",
+              "diagnostics": {
+                "support": 1
+              }
+            }
+          ]
+        }
+      ],
+      "constraints_learned": []
+    }
+  ]
+}

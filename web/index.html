@@ -3,32 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Counterplan — CEGIS Assembly Planning</title>
+  <title>counterplan — CEGIS assembly planning</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
   <header>
     <h1>counterplan</h1>
-    <p class="subtitle">When assembly fails, fix the geometry.</p>
+    <p class="subtitle">The solver places each block. Unstable moves fall.</p>
   </header>
 
   <main>
     <div id="viewer">
       <div id="structure-panel">
-        <svg id="canvas" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <filter id="shadow">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
-            </filter>
-          </defs>
-          <g id="ground-group"></g>
-          <g id="block-group"></g>
-          <g id="arrow-group"></g>
-        </svg>
+        <div id="three-canvas"></div>
         <div id="status-bar">
-          <span id="status-text">Load a trace to begin</span>
+          <span id="status-text">Loading…</span>
         </div>
       </div>
 
@@ -38,8 +37,16 @@
           <div id="sequence-display" class="mono"></div>
         </div>
         <div class="panel-section">
-          <h3>Constraints</h3>
+          <h3>Learned constraints</h3>
           <div id="constraints-list" class="mono"></div>
+        </div>
+        <div class="panel-section">
+          <h3>Verifier chain</h3>
+          <div id="verifier-list" class="mono">
+            <div><span class="swatch swatch-kinematic"></span>kinematic — fall path</div>
+            <div><span class="swatch swatch-stability"></span>equilibrium — LP forces</div>
+            <div><span class="swatch swatch-landing"></span>landing — settles at target</div>
+          </div>
         </div>
         <div class="panel-section">
           <h3>Result</h3>
@@ -54,7 +61,7 @@
       </div>
       <div id="timeline-controls">
         <button id="btn-prev" title="Previous step">&larr;</button>
-        <button id="btn-play" title="Play/Pause">&#9654;</button>
+        <button id="btn-play" title="Play / pause">&#9654;</button>
         <button id="btn-next" title="Next step">&rarr;</button>
         <span id="frame-counter" class="mono">0 / 0</span>
       </div>
@@ -63,14 +70,19 @@
     <div id="trace-selector">
       <label>Structure:</label>
       <select id="trace-select">
-        <option value="post_and_lintel">Post & Lintel (feasible)</option>
-        <option value="pyramid_10">Pyramid 10 (feasible)</option>
-        <option value="arch_5">Arch 5 (infeasible)</option>
+        <option value="pyramid_6">Pyramid 6 (feasible)</option>
+        <option value="pyramid_10">Pyramid 10 (feasible, needs kinematic)</option>
+        <option value="wall_4">Wall 4 (feasible)</option>
+        <option value="post_and_lintel">Post &amp; Lintel (feasible)</option>
+        <option value="arch_5">Arch 5 (infeasible — stability cycle)</option>
+        <option value="arch_7">Arch 7 (infeasible)</option>
         <option value="gothic_arch">Gothic Arch (infeasible)</option>
+        <option value="cantilever_5">Cantilever 5 (infeasible)</option>
+        <option value="unstable_tower">Unstable Tower (feasible, topples in real physics)</option>
       </select>
     </div>
   </main>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
