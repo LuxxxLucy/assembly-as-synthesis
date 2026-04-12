@@ -7,6 +7,7 @@ bridge between algorithm and visualization — keep it thin.
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -50,6 +51,14 @@ def main() -> None:
         status = "FEASIBLE" if result.feasible else "INFEASIBLE"
         print(f"{slug:20s} {status:10s} rounds={len(result.rounds):3d} "
               f"kin={kin} stab={stab} land={land}  →  {path.relative_to(ROOT)}")
+
+    # Mirror introduction.md into web/ so the viewer's "about" panel can fetch it.
+    # Single source of truth is the top-level file; this is an auto-synced copy.
+    intro_src = ROOT / "introduction.md"
+    intro_dst = ROOT / "web" / "introduction.md"
+    if intro_src.exists():
+        shutil.copyfile(intro_src, intro_dst)
+        print(f"intro sync'd         →  {intro_dst.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

@@ -18,9 +18,21 @@
 </head>
 <body>
   <header>
-    <h1>counterplan</h1>
-    <p class="subtitle">The solver places each block. Unstable moves fall.</p>
+    <div class="header-row">
+      <div>
+        <h1>counterplan</h1>
+        <p class="subtitle">The solver places each block. Unstable moves fall.</p>
+      </div>
+      <button id="btn-about" class="btn-about" title="About">about</button>
+    </div>
   </header>
+
+  <div id="about-modal" class="modal-backdrop" hidden>
+    <div class="modal">
+      <button id="btn-about-close" class="modal-close" title="Close">&times;</button>
+      <article id="about-content" class="prose">Loading…</article>
+    </div>
+  </div>
 
   <main>
     <div id="viewer">
@@ -83,6 +95,31 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
   <script type="module" src="app.js"></script>
+  <script>
+    const modal  = document.getElementById('about-modal');
+    const openBtn = document.getElementById('btn-about');
+    const closeBtn = document.getElementById('btn-about-close');
+    const content = document.getElementById('about-content');
+    let loaded = false;
+
+    async function openAbout() {
+      modal.hidden = false;
+      if (!loaded) {
+        try {
+          const md = await fetch('introduction.md').then(r => r.text());
+          content.innerHTML = window.marked ? marked.parse(md) : md;
+          loaded = true;
+        } catch (e) {
+          content.textContent = `Failed to load introduction.md: ${e.message}`;
+        }
+      }
+    }
+    openBtn.addEventListener('click', openAbout);
+    closeBtn.addEventListener('click', () => { modal.hidden = true; });
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.hidden = true; });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.hidden = true; });
+  </script>
 </body>
 </html>

@@ -29,6 +29,109 @@ body {
 .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
 header { padding: 1.5rem 2rem 0.5rem; }
+.header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.btn-about {
+  background: transparent;
+  color: var(--fg-muted);
+  border: 1px solid var(--surface-2);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border-radius: 3px;
+  margin-top: 0.2rem;
+}
+.btn-about:hover { color: var(--fg); border-color: var(--accent); }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 16, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 2rem;
+}
+.modal-backdrop[hidden] { display: none; }
+.modal {
+  background: var(--surface);
+  border-radius: 8px;
+  max-width: 780px;
+  width: 100%;
+  max-height: 86vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 2rem 2.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.modal-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
+  font-size: 1.4rem;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: 0 0.4rem;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--fg); background: transparent; }
+.prose {
+  color: var(--fg);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.prose h1, .prose h2, .prose h3 {
+  font-weight: 500;
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+  color: var(--fg);
+}
+.prose h1 { font-size: 1.3rem; }
+.prose h2 { font-size: 1.05rem; color: var(--accent); }
+.prose h3 { font-size: 0.92rem; color: var(--terracotta); }
+.prose hr { border: none; border-top: 1px solid var(--surface-2); margin: 1.6em 0; }
+.prose code {
+  background: var(--surface-2);
+  color: var(--fg);
+  padding: 0.08em 0.35em;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+.prose pre {
+  background: var(--surface-2);
+  padding: 0.9rem 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.prose pre code { background: transparent; padding: 0; }
+.prose table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 0.82rem;
+}
+.prose th, .prose td {
+  border: 1px solid var(--surface-2);
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+}
+.prose th { background: var(--surface-2); }
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 0.8rem;
+  color: var(--fg-muted);
+  margin: 0.8em 0;
+  font-style: italic;
+}
+.prose a { color: var(--accent); }
 h1 {
   font-size: 1.4rem;
   font-weight: 500;
