@@ -57,7 +57,14 @@ def drop_corridor(block: Block, direction: tuple[float, float] = (0.0, -1.0)) ->
 
     base = Polygon(block.vertices)
     shifted = Polygon(block.vertices + insertion * SWEEP_LENGTH)
-    return unary_union([base, shifted]).convex_hull
+    try:
+        return unary_union([base, shifted]).convex_hull
+    except Exception:
+        # Shapely can choke on near-collinear hulls at extreme SWEEP_LENGTH.
+        # Fallback: convex hull of the combined vertex set directly.
+        pts = np.vstack([block.vertices, block.vertices + insertion * SWEEP_LENGTH])
+        from shapely.geometry import MultiPoint
+        return MultiPoint([tuple(p) for p in pts]).convex_hull
 
 
 @dataclass

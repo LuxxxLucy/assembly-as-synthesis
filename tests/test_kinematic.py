@@ -94,6 +94,37 @@ def test_pyramid_10_feasible_and_uses_kinematic():
     assert has_kinematic, "expected at least one kinematic constraint in pyramid_10"
 
 
+def test_pyramid_10_block_8_blocks_block_6_descent():
+    """Direct regression: in pyramid_10, if block 8 (row-2 right, x=[0,1.5])
+    is placed before block 6 (row-1 right, x=[0.75,2.25]), block 6's vertical
+    drop corridor intersects block 8 over an area of 0.75. The kinematic
+    verifier must catch this and learn 6 ≺ 8.
+    """
+    s = pyramid_10()
+    v = KinematicVerifier()
+    # Arbitrary prefix that places 8 before 6 is enough — verifier only looks
+    # at `placed_before` for the step being checked.
+    seq = [0, 1, 2, 3, 4, 5, 8, 6, 7, 9]
+    r = v.check(s, sequence=seq, step=7, all_block_ids=[b.id for b in s.blocks])
+    assert not r.feasible, "kinematic verifier must detect 8 blocks 6's descent"
+    assert r.diagnostics["blockers"] == [8]
+    assert len(r.new_constraints) == 1
+    pc = r.new_constraints[0]
+    assert (pc.before, pc.after, pc.source) == (6, 8, "kinematic")
+
+
+def test_pyramid_10_final_sequence_respects_kinematic():
+    """End-to-end: the CEGIS solution for pyramid_10 must place block 6
+    before block 8 (since 8 otherwise blocks 6's vertical descent)."""
+    r = solve(pyramid_10(), max_rounds=100, seed=42)
+    assert r.feasible and r.sequence is not None
+    idx6 = r.sequence.index(6)
+    idx8 = r.sequence.index(8)
+    assert idx6 < idx8, (
+        f"block 6 must come before block 8 in the final sequence; got {r.sequence}"
+    )
+
+
 def test_wall_and_post_lintel_feasible():
     for sf in (wall_4, post_and_lintel_5):
         r = solve(sf(), max_rounds=50, seed=42)
