@@ -24,107 +24,66 @@
   <h1>Assembly as Synthesis</h1>
 
   <section>
-    <p class="subtitle">Jialin Lu &middot; April 2026</p>
-    <p>
+      <p>
       <label for="mn-code" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-code" class="margin-toggle"/>
       <span class="marginnote">
-        Code available at
-        <a href="https://github.com/LuxxxLucy/assembly-as-synthesis">LuxxxLucy/assembly-as-synthesis</a>.
-        Interactive 3D viewer: <a href="web/">open the demo</a>.
+        Code: <a href="https://github.com/LuxxxLucy/assembly-as-synthesis">luxxxlucy/assembly-as-synthesis</a>.
+        <br>
+        An interactive viewer can be accessed <a href="web/">here</a>.
       </span>
-      <em>TL;DR</em>&ensp;
-      Ordering blocks so the partial tower never topples is a
-      <em>program synthesis</em> problem:
-      search for a program (here, a placement order) that satisfies a
-      specification (here, physics).
-      Modern synthesis splits that search into a <em>proposer</em> that
-      guesses and a <em>verifier</em> that checks;
-      the proposer can be a SAT/SMT solver, a random sampler, an LLM,
-      or a VLM.
-      Same loop, different proposer.
-      Five of them, on one ten-block task, side by side.
-    </p>
+      <p class="subtitle">Jialin Lu &middot; <a href="https://luxxxlucy.github.io">luxxxlucy.github.io</a></p>
+      <p style="font-style:italic; font-size:1.1rem; color:#6b6b6b; margin-top:-0.6rem; line-height:1;">April 12, 2026</p>
+      </p>
   </section>
 
   <section>
-    <h2>Two ways to do it</h2>
-
     <p>
-      <span class="newthought">Program synthesis has a classical recipe.</span>
-      Encode the problem as logical constraints, hand them to an SMT solver
-      &mdash; a theorem prover that decides satisfiability over theories
-      like integers, arrays, and linear arithmetic &mdash;
-      and read the plan off its model.
-      Sketch<label for="sn-sketch" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-sketch" class="margin-toggle"/><span class="sidenote">Solar-Lezama, <em>Program Synthesis by Sketching</em> (PhD thesis, Berkeley, 2008). The canonical modern synthesis system.</span>
-      did this for partial programs;
-      FlashFill<label for="sn-ff" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-ff" class="margin-toggle"/><span class="sidenote">Gulwani, <em>Automating String Processing in Spreadsheets Using Input-Output Examples</em> (POPL 2011). Shipped in Excel.</span>
-      did it for spreadsheet string transformations.
-      The craft is in the encoding.
+      <em>TL;DR</em>&ensp;
+      Assembly is the process of constructing from small parts according to a plan.
+      In this blog we demonstrate that we can solve assembly planning as program synthesis.
+      Under a general framework of learning from mistakes,<label for="sn-cegis-hint" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-cegis-hint" class="margin-toggle"/>
+      <span class="sidenote">where it is more formally called counterexample-guided synthesis (CEGIS). Will be introduced later.</span>
+      we show both the old fashioned program synthesis approaches,
+      and then the more modern neueral approaches using large language and vision models.
     </p>
-
     <p>
-      The classical route buys a strong guarantee:
-      the solver either returns a plan or <em>proves</em> none exists.
-      The price is paid in priors.
-      A SAT/SMT solver does not know that bottom blocks go first, that
-      arches need mutual thrust, that a heavy block on a narrow base is
-      a bad idea.
-      It knows only what the encoding says.
-      Nothing accelerates the search beyond what the user wrote down by
-      hand.
-    </p>
-
-    <p>
-      The second route runs on priors instead of proofs.
-      A large language model is a statistical proposer that has read an
-      enormous amount about how people solve physical problems &mdash;
-      pyramids, scaffolding, keystones.
-      Hand it the task and it often proposes a workable plan on the
-      first try.
-      When it doesn&rsquo;t, the same verifier that rejected Z3&rsquo;s
-      plan can reject the LLM&rsquo;s.
-      The rejection message, in English, is exactly the shape of
-      feedback the model was trained to consume.
-    </p>
-
-    <p>
-      Both routes run the same loop.
-      It is called <em>counterexample-guided inductive synthesis</em>, or
-      CEGIS<label for="sn-cegis" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-cegis" class="margin-toggle"/><span class="sidenote">Solar-Lezama et al., <em>Combinatorial Sketching for Finite Programs</em> (ASPLOS 2006).</span>:
-      propose a candidate, verify it, and when verification fails,
-      distill the failure into a reusable constraint before proposing again.
-      The verifier does not just say no &mdash;
-      it hands back a reason the next proposal must respect.
-      That is the whole trick, and it is what makes a random sampler and
-      a solver comparable on the same axis.
+      The two approaches sit at opposite ends of the spectrum, and each's strength is also precisely its inherent weakness. Symbolic synthesis encodes the problem elegantly, runs efficiently, but it does not has a good prior nor common sense baked in about the physical world. Meanwhile neural synthesis offers only stochastic results, yet it absorbs rich priors about the world we live in.<label for="sn-carbon" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-carbon" class="margin-toggle"/><span class="sidenote">Those priors, of course, do not come for free: training and serving such models carries a considerable carbon footprint.</span>
     </p>
   </section>
 
   <hr/>
 
   <section>
-    <h2>The task &amp; the verifier</h2>
+    <h2>Introduction</h2>
 
     <p>
-      <span class="newthought">The task</span> is to output the placement
-      order for a target arrangement of blocks.
-      Every prefix of the order has to stand up,
-      and every next block has to reach its slot from above without
-      clipping the ones already placed.
+      An assembly plan is a program.
     </p>
+    <p>
+    In an extremely simplified way, building a wall (a pyramid, an arch, etc) is really about figureing out a sequence of primitive actions: place this block here, and then that one there. Reality requires the assembly plan to be <em>valid</em> and <em>feasible</em>, in the sense that the assembly process needs to satisfy the law of gravity, partially-built object needs to be stable<label for="sn-scaffold" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-scaffold" class="margin-toggle"/>
+      <span class="sidenote">Otherwise some kind of scaffolding is needed; let us we not discuss the other consideratoons for assembly nor scaffolding in this simplified world.</span>, etc.
+    </p>
+
+    <p>
+      It is therefore natural to think assembly planning as a program synthesis problem. To keep everything simple, let us assume we have a simplified world, where we want to build a target structure that consists of blocks. We also defines a set of rules in this toy world as follows:
+    </p>
+
+    <ul>
+      <li>In this world we have a gravity that drags things down to ground.</li>
+      <li>We say we only have a stupid robot for the assembly that can only place a block from top down and cannot temporarily move other blocks. And so the placement of new blocks should not have any collisions with the current blocks.</li>
+      <li>Partial structures should remain stable, otherwise the structure would collapse.</li>
+      <li>The goal is to have a assembly plan that the robot can put a block one at a time to construct the targeted design.
+    </ul>
 
     <figure id="task-viewer">
       <label for="mn-task-viewer" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-task-viewer" class="margin-toggle"/>
       <span class="marginnote">
-        Running example: <code>pyramid_10</code>, auto-playing. Ten
-        blocks; gravity points down; 10! = 3,628,800 orderings. Most are
-        infeasible: a mid-row block cannot descend once a block above it
-        already sits in its slot. Left panel shows the proposer placing
-        blocks; right panel shows the target structure. For other
-        structures and manual control, open the
-        <a href="web/" target="_blank">full viewer</a>.
+        Here we have a design of a pyramid of 10 blocks.
+        The left panel shows an agent trying to build the target; the right shows the target. A few more other examples in the <a href="web/" target="_blank">interactive viewer</a>
       </span>
       <iframe src="web/embed.html?structure=pyramid_10_blog&autoplay=1&theme=light&loop=1"
               title="CEGIS task viewer"
@@ -132,347 +91,462 @@
                      border-radius:4px; background:#fffff8;"
               loading="lazy"></iframe>
     </figure>
-
     <p>
-      <span class="newthought">The verifier</span> is the physics referee.
-      For each step of a candidate plan it answers one question:
-      can this block be placed right now, given what is already down?
-      The verifier<label for="sn-chain" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-chain" class="margin-toggle"/><span class="sidenote">Implemented in <code>src/counterplan/verifiers/</code>.</span>
-      is a chain of three cheap physical checks, run cheapest-first so
-      any failure short-circuits:
-    </p>
-
-    <ul>
-      <li><b>Kinematic</b> &mdash; the block must descend into position
-        without intersecting any block already placed (swept polygon
-        test).</li>
-      <li><b>Stability</b> &mdash; the partial structure must stand under
-        gravity, friction, and compression-only contact (LP static
-        equilibrium).</li>
-      <li><b>Landing</b> &mdash; the target slot must actually catch the
-        block; it should not fall past.</li>
-    </ul>
-
-    <p>
-      Each failed check returns a <em>precedence constraint</em> &mdash;
-      a fact of the form &ldquo;A must be placed before B&rdquo;, with the
-      physical reason attached.
-      The stability check, for instance, solves a small LP and reports the
-      <em>minimal support set</em>:
-      the smallest set of still-missing neighbours whose presence would
-      restore equilibrium.
-      Each neighbour in that set becomes one precedence constraint.
-      This is the CEGIS counterexample, made durable<label for="sn-cdcl" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-cdcl" class="margin-toggle"/><span class="sidenote">The same move as CDCL clause learning in modern SAT solvers.</span>:
-      one failed round prunes an exponential slice of future orderings.
+        <label for="mn-program" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-program" class="margin-toggle"/>
+        <span class="marginnote">
+            A actual program might look like this:
+          <span style="display:block; white-space:pre; font-family:'JetBrains Mono','Menlo',monospace; font-size:0.70rem; line-height:1.35; margin-bottom:0.5em;">&lt;program&gt;
+  &lt;action&gt; place block id=1 &lt;/action&gt;
+  &lt;action&gt; place block id=3 &lt;/action&gt;
+  &lt;action&gt; place block id=0 &lt;/action&gt;
+  &lt;action&gt; place block id=2 &lt;/action&gt;
+  &lt;action&gt; place block id=4 &lt;/action&gt;
+  &lt;action&gt; place block id=5 &lt;/action&gt;
+  &lt;action&gt; place block id=7 &lt;/action&gt;
+  &lt;action&gt; place block id=6 &lt;/action&gt;
+  &lt;action&gt; place block id=8 &lt;/action&gt;
+  &lt;action&gt; place block id=9 &lt;/action&gt;
+&lt;/program&gt;</span>
+          Or with some syntax sugar, we can write it simply as <code>plan([1, 3, 0, 2, 4, 5, 7, 6, 8, 9])</code>.
+        </span>
     </p>
 
     <p>
-      The proposer never touches physics.
-      It needs only the current set of precedence constraints &mdash;
-      in SMT, or the same constraints in English &mdash;
-      and outputs a legal permutation.
-      Whatever proposes that permutation plugs into the same loop.
+        This should be a simple setting for us to start with.
+        And by this point it shall be apparent to the readers that this is a trivial task, and indeed it is intentionally designed to be so. To make it more explicit, such an assembly plan might be described as a procedural routine.
+    </p>
+  </section>
+
+  <section>
+    <h2>Solving it with a try-and-learn loop</h2>
+
+    <p>
+      Ultimately every problem-solving in the end is simply try-and-learn, nor is ours an exception.
+      Unless some oracle or good heuristic is provided, a problem sovler will try, fail, learn from the feedback and then try again.
+
+    </p>
+
+    <p>
+      This setting is more akin to reinforcement learning (RL).
+      In each turn the agent proposes new actions; the environment returns feedback; the agent adjusts and tries again.
+      Using a slightly more trendy buzzword, we can describe it as an <em>in-context</em> RL agent.
     </p>
 
     <figure>
-      <label for="mn-loop" class="margin-toggle">&#8853;</label>
-      <input type="checkbox" id="mn-loop" class="margin-toggle"/>
+      <label for="mn-rl" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-rl" class="margin-toggle"/>
       <span class="marginnote">
-        The agentic loop. Same skeleton for every proposer in this post
-        &mdash; only the PROPOSER box and the encoding of the feedback
-        arrow change.
+        A plain actor / environment loop for those who are more familiar with reinforcement learning formulations.
       </span>
-<pre class="code">
-             ┌─────────────────────────┐
-             │   PROPOSER              │
-             │   (random / Z3 / LLM)   │──────► candidate plan
-             └─────────────────────────┘              │
-                          ▲                           ▼
-       precedence clauses │          ┌──────────────────────────────┐
-          (in SMT, prose, │          │   VERIFIER CHAIN             │
-           or tool-result)│          │   kinematic → stability →    │
-                          │          │   landing  (per step k)      │
-                          │          └──────────────────────────────┘
-                          │                           │
-                          │                           ▼
-                          │                    pass? ──► done
-                          │                           │
-                          │                     fail at step k
-                          │                           ▼
-                          │          ┌──────────────────────────────┐
-                          └──────────│  CE GENERALISATION           │
-                                     │  minimal support / blockers  │
-                                     │  → precedence clauses        │
-                                     └──────────────────────────────┘
-</pre>
+      <div id="fig-rl" style="width:100%; max-width:600px; margin:0 auto;"></div>
     </figure>
+
+    <p>
+      In order to let the agent learn from the
+      feedback and then use it to guide its decision next time,
+      the try-and-learn agent only needs one cirtical component: memory.
+      We supplement the agent with a memory, we stored the lessions we learned from the feedback in the memory, and the memory can guide it make better decisions in the future.
+      It is a simple (and natural) idea, but it is still a very vague idea, as we do not really properly define what is a lesson and what is this memory, nor do we know how we can define and mechanically compute on it.
+    </p>
+
+    <p>
+      In order to make it computable,
+      when we define the lesson learned as logical clauses, and that the memory as a concatenation of all the learned clauses combined, we now have <em>counterexample-guided inductive synthesis</em> (CEGIS).<label for="sn-cegis" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-cegis" class="margin-toggle"/>
+      <span class="sidenote">Armando Solar-Lezama, <em>Program synthesis by Sketching</em>, PhD thesis 2008. Though similar ideas are already present in earlier literature.</span>
+      In this post I will swap five different agents into the same loop.
+      The loop with one twist: the environment does more than score.
+      In each round, the agent learns the failure and turns into memory, and it becomes a rule that the next round has to respect.
+    </p>
+
+    <figure>
+      <label for="mn-cegis-mem" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-cegis-mem" class="margin-toggle"/>
+      <span class="marginnote">
+        The essence of CEGIS is that the "learn from feedback" step inside the agent now has a memory attached: each new failure deposits one more memory into it, and the next round must respect all memory so far so that the same mistake will not happen again.
+      </span>
+      <div id="fig-cegis-mem" style="width:100%; max-width:700px; margin:0 auto;"></div>
+    </figure>
+
+    <p>
+      The lessons learned in this environment are a precedence clause, <em>A must be placed before B</em> — in our running example, <em>block 6 must be placed before block 8</em>.<label for="sn-chain" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-chain" class="margin-toggle"/>
+      <span class="sidenote">
+        The environment decides pass or fail, and on fail it explains why. Concretely we run a chain of three cheap physics checks: <b>kinematic</b> (can the block descend into its slot without intersecting anything already placed?), <b>stability</b> (does the partial structure stand under gravity, friction, and compression-only contact? an LP equilibrium test), <b>landing</b> (does the target slot actually catch the block?). Code in <code>src/counterplan/verifiers/</code>.
+      </span>
+      This precedence clause is what the agent commits to memory.<label for="sn-cdcl" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-cdcl" class="margin-toggle"/>
+      <span class="sidenote">The same trick as CDCL clause learning in SAT solvers.</span>
+    </p>
   </section>
 
   <hr/>
 
   <section>
-    <h2>1 &middot; Random proposer &mdash; the baseline</h2>
+    <h2>A simple agent: random search with learned dependencies</h2>
 
     <p>
-      <span class="newthought">The simplest proposer</span> is Kahn&rsquo;s
-      topological sort with random tie-breaking &mdash;
-      sample any permutation that respects the precedence constraints
-      learned so far, hand it to the verifier, fold whatever new
-      constraints come back into the next round&rsquo;s pool.
-      If those constraints ever form a cycle, the structure is
-      <em>inherently infeasible</em>.
-      An arch is the canonical case:
-      no voussoir can go in first without a scaffold.
+      Here we start with a simplest agent possible: it proposes new actions (which block to place) randomly,
+      hands it to the verifier, and learn from whatever the precedence clauses come back into memory.
     </p>
 
     <p>
-      On <code>pyramid_10</code>, random CEGIS solves the problem in
-      roughly seven rounds, learning about ten precedence constraints
-      along the way.
-      Against a 3.6 &times; 10<sup>6</sup> permutation space that is
-      obviously a win;
-      the question is how much further we can push things by changing
-      only the proposer.
+      For example, the following traces shows that in the first round, the agent continue proposing new actions, let the enviroment verify, and then when it failed, it learns a precedence clause, a lesson.
     </p>
 
+    <figure>
+      <label for="mn-try1" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-try1" class="margin-toggle"/>
+      <span class="marginnote">
+        TRY 1: no constraints yet. The agent places blocks until 6 runs into 8 and the environment hands back one clause.
+      </span>
+<pre class="code" style="font-size:0.78rem;">TRY 1: no prior constraints
+  place 0 -&gt; OK
+  place 1 -&gt; OK
+  place 2 -&gt; OK
+  place 4 -&gt; OK
+  place 5 -&gt; OK
+  place 3 -&gt; OK
+  place 8 -&gt; OK
+  place 6 -&gt; FAIL (kinematic): block 6 cannot descend, blocked by 8
+  learn: 6 must be placed before 8</pre>
+    </figure>
+
+    <p>
+      The clause <em>6 before 8</em> is returned by the enviroment the verifier when block 6's descent path is blocked by block 8. The loop writes that one line into memory (concretely, a list of <code>(a, b)</code> pairs kept next to the agent). On the next round the agent filters its random proposals to those consistent with memory clauses, so the same mistake will not happen again.
+    </p>
+
+    <p>
+      Retry and retry with the memory.
+    </p>
+
+    <figure>
+      <label for="mn-try2" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-try2" class="margin-toggle"/>
+      <span class="marginnote">
+        TRY 2: It finds a feasible plan. In fact the random agent typically converges in 3 to 7 rounds, depends on the random seed. I call it 2nd TRY just as demonstration.
+      </span>
+<pre class="code" style="font-size:0.78rem;">TRY 2: memory = { 6 before 8 }
+  place 1 -&gt; OK
+  place 3 -&gt; OK
+  place 0 -&gt; OK
+  place 2 -&gt; OK
+  place 4 -&gt; OK
+  place 5 -&gt; OK
+  place 7 -&gt; OK
+  place 6 -&gt; OK
+  place 8 -&gt; OK
+  place 9 -&gt; OK
+  success. final plan: [1, 3, 0, 2, 4, 5, 7, 6, 8, 9]</pre>
+    </figure>
+
+    <p>
+      That is CEGIS in simplest form. The rest of the post swaps the implementation of the agent, essentially how the lesson and memory is represented (Z3, LLMs, VLMs). The general loop stays the same.
+    </p>
   </section>
 
   <hr/>
 
   <section>
-    <h2>2 &middot; SMT proposer &mdash; Z3</h2>
+    <h2>Symbolic synthesis: Sketch and the SMT route</h2>
 
     <p>
-      <span class="newthought">The plan is the model.</span>
-      We declare one integer variable per step
-      &mdash; <code>action[k]</code>, the block placed at step
-      <code>k</code>, for <code>k&nbsp;=&nbsp;0..n&minus;1</code> &mdash;
-      and ask Z3 to assign them.
-      Whatever assignment it returns <em>is</em> the plan.
-      No decoder, no post-processing:
-      the solver&rsquo;s model is the artefact we wanted.
+      A more formal and old-school symbolic approach would formulate the problem, and the lessons all as symbolic objects of constraints, i.e. as a set of logical constraints and hands them to a backend incremental SMT solver.<label for="sn-smt" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-smt" class="margin-toggle"/>
+      <span class="sidenote">SMT stands for <em>satisfiability modulo theories</em>. Think of it as SAT plus a pluggable theory (integers, linear real arithmetic, arrays) so you can write math-like statements and the solver reasons about them. Z3 is the canonical tool maintained by Microsoft.</span>
+      Let \(P\) be a candidate program and \(\varphi\) the specification. A verifier \(V(P)\) returns either <em>pass</em> or a counterexample \(c\) witnessing \(\neg\varphi(P)\). CEGIS maintains a constraint set \(\Phi\) that grows with each \(c\):
     </p>
-
-    <p>The baseline theory is trivial &mdash; two lines of SMT:</p>
 
     <p>\[
       \begin{aligned}
-        &\mathsf{action}[k] \in \mathsf{BlockIds},
-          \quad k = 0, \dots, n-1 \\[2pt]
-        &\mathsf{Distinct}\bigl(\mathsf{action}[0],\,\dots,\,\mathsf{action}[n-1]\bigr)
+        &\textbf{repeat:} \\
+        &\quad P \leftarrow \text{Propose}(\Phi) \\
+        &\quad c \leftarrow V(P) \\
+        &\quad \textbf{if } c = \bot:\ \textbf{return } P \\
+        &\quad \Phi \leftarrow \Phi \cup \text{Generalise}(c)
       \end{aligned}
     \]</p>
 
     <p>
-      Every learned precedence &ldquo;A must precede B&rdquo; becomes one
-      clause, universally quantified over steps<label for="sn-enc" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-enc" class="margin-toggle"/><span class="sidenote">Quantifier-free once unfolded over the fixed <em>n</em>. No triggers, no model-based quantifier instantiation &mdash; it is a plain propositional unfolding that Z3 handles directly.</span>:
+      This loop is what powered some of the most celebrated program-synthesis results.<label for="sn-cegis-ex" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-cegis-ex" class="margin-toggle"/>
+      <span class="sidenote">
+        <b>Sketch</b> (Solar-Lezama, <em>Program Synthesis by Sketching</em>, Berkeley, 2008) chose an SMT solver for <em>Propose</em>: the user writes a partial program with holes, the verifier checks against input/output examples, and unsat cores become new constraints. <b>FlashFill</b> (Gulwani, <em>Automating String Processing in Spreadsheets Using Input-Output Examples</em>, POPL 2011; shipped in Excel) does the same for spreadsheet string transformations. Both lean on a mature SMT backend and spend their budget on the encoding.
+      </span>
+      Given blockIDs as the set of available block identifiers, the actual assembly plan of <code>plan([...])</code> will be defined formally as:
     </p>
 
     <p>\[
-      \forall\, k.\ \mathsf{action}[k] = B
-      \;\Longrightarrow\;
-      \exists\, k' < k.\ \mathsf{action}[k'] = A
+      \begin{aligned}
+        &\mathsf{Plan}\bigl(\mathsf{action}[0],\,\dots,\,\mathsf{action}[n-1]\bigr), \\[2pt]
+        &\text{where } \mathsf{action}[k] \in \mathsf{BlockIds},
+          \quad k = 0, \dots, n-1.
+      \end{aligned}
     \]</p>
 
     <p>
-      The loop is exactly the diagram above, instantiated for Z3.
-      Z3 returns a model, we read the plan straight off the
-      <code>action[k]</code> variables, the verifier runs, every fresh
-      precedence becomes another clause, and we call
-      <code>check()</code> again.
-      If Z3 ever returns <code>unsat</code>, the structure is
-      <em>provably</em> infeasible &mdash; not &ldquo;we gave up&rdquo;.
-      That proof of impossibility is what the classical route buys you.
+      Every learned precedence "A before B" becomes one logical clause:<label for="sn-enc" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-enc" class="margin-toggle"/>
+      <span class="sidenote">Z3 supports quantifier-free statements directly.</span>
+    </p>
+
+    <p>
+    \[
+      \forall\, k.\ \mathsf{action}[k] = B
+      \;\Longrightarrow\;
+      \exists\, k' < k.\ \mathsf{action}[k' ] = A
+    \]
+    </p>
+
+    <p>
+      In Python with Z3 that is essentially a direct transliteration.<label for="sn-z3-code" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-z3-code" class="margin-toggle"/>
+      <span class="sidenote">
+        The whole agent in twenty-odd lines (full source: <a href="https://github.com/LuxxxLucy/assembly-as-synthesis/blob/main/src/counterplan/z3_solver.py"><code>src/counterplan/z3_solver.py</code></a>). The only input from the verifier is the list of <code>(a, b)</code> precedence pairs; the solver does the rest.
+        <span style="display:block; white-space:pre; font-family:'JetBrains Mono','Menlo',monospace; font-size:0.70rem; line-height:1.35; margin-top:0.5em; background:#f5f5ee; padding:0.5em; border-radius:3px;">from z3 import Solver, Int, Distinct, \
+    And, Or, Implies, sat
+
+# action[k]: block placed at step k
+action = [Int(f"a_{k}") for k in range(n)]
+
+solver = Solver()
+solver.add(Distinct(*action))
+for a in action:
+    solver.add(Or([a == bid
+                   for bid in block_ids]))
+
+# "a before b" as one clause:
+def precedence(a, b):
+    return And([
+      Implies(action[k] == b,
+        Or([action[kp] == a
+            for kp in range(k)])
+        if k &gt; 0 else False)
+      for k in range(n)])
+
+while solver.check() == sat:
+    plan = [solver.model()
+              .eval(action[k]).as_long()
+            for k in range(n)]
+    failures = verify(structure, plan)
+    if not failures:
+        return plan
+    for (a, b) in failures:
+        solver.add(precedence(a, b))
+# unsat: provably infeasible.</span>
+      </span>
+    </p>
+
+    <figure>
+      <label for="mn-smt-loop" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-smt-loop" class="margin-toggle"/>
+      <span class="marginnote">
+        SMT-specific instantiation of the CEGIS loop. The AGENT is <code>z3.Solver.check()</code>; the MEMORY is a set of SMT assertions; the memory update is <code>solver.add()</code>. The VERIFIER is the same chain of Python physics checks as before.
+      </span>
+      <div id="fig-smt-loop" style="width:100%; max-width:760px; margin:0 auto;"></div>
+    </figure>
+
+    <p>
+      Whatever the assembly plan the Z3 returns <em>is</em> is a feasible plan. If Z3 returns <code>unsat</code>, the structure is <em>provably</em> infeasible, which is the good thing about it. On <code>pyramid_10</code>, Z3 converges in six rounds.
     </p>
 
     <figure>
       <label for="mn-z3" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-z3" class="margin-toggle"/>
       <span class="marginnote">
-        Clauses the verifier fed to Z3 while solving <code>pyramid_10</code>.
-        Each <code>pos(a) &lt; pos(b)</code> says &ldquo;a must come
-        before b&rdquo;.
+        Z3's trace for solving this toy problem.
       </span>
       <pre id="z3-clauses" class="code" style="font-size:0.78rem;">loading…</pre>
     </figure>
 
     <p>
-      We don&rsquo;t take this step here, but:
-      one could bake the verifier itself into the theory.
-      Stability is an LP; LP is a first-class SMT theory
-      (<code>QF_LRA</code>).
-      Kinematic clearance is a polygon-containment predicate;
-      equality-saturation on the contact graph could give the solver an
-      <em>e-graph</em><label for="sn-egg" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-egg" class="margin-toggle"/><span class="sidenote">Willsey et al., <em>egg: Fast and Extensible Equality Saturation</em> (POPL 2021).</span>
-      of equivalent partial structures so deductions carry across
-      branches.
-      All of it is classical synthesis machinery, and all of it
-      eventually runs out.
-      Without priors, you are always exploring.
+      Note that in fact this is only a simple version. SMT also provides ways to write custom <em>theories</em> so that stability equivilence can be incorporated to further improve the search.<label for="sn-smt-more" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-smt-more" class="margin-toggle"/>
+      <span class="sidenote">Meanwhile, it might appears that our sequence encoding repeats a lot of work because many orderings actions might produce the same partial structures. But Z3 internally have an <em>e-graph</em> (Tate et al., <em>Equality Saturation: A New Approach to Optimization</em>, 2010) that could compress equivalent partial structures so we in fact have the search space nicely pruned.</span>
     </p>
   </section>
 
   <hr/>
 
   <section>
-    <h2>3 &middot; LLM proposer &mdash; via a tool call</h2>
+    <h2>What does the solver actually know?</h2>
 
     <p>
-      <span class="newthought">For the LLM route</span> the protocol is
-      agentic.
-      The model sees one tool: <code>submit_plan(plan: list[int])</code>.
-      Each turn it calls the tool with a full permutation of block ids;
-      our code intercepts the call, runs the verifier, and returns the
-      verifier&rsquo;s feedback as the <code>role: tool</code> response.
-      The model then gets another turn with that feedback appended to
-      its context &mdash; no prose conversation history to reconstruct,
-      no JSON parsing to chase, no hallucinated tool names.
-    </p>
-
-    <figure>
-      <label for="mn-tool" class="margin-toggle">&#8853;</label>
-      <input type="checkbox" id="mn-tool" class="margin-toggle"/>
-      <span class="marginnote">
-        The <code>submit_plan</code> tool, registered once at the start
-        of the conversation and shared every turn.
-        Transport: Fireworks AI&rsquo;s OpenAI-compatible Chat
-        Completions endpoint;
-        <code>deepseek-v3p1</code> for text, <code>kimi-k2p5</code> for
-        vision.
+      Bear with me if you follow here to me. Z3/SMT is a huge bulk of work, even though it backs a lot of critical tasks in this world, it is still not quite accessible and easy to follow or use.<label for="sn-smt-aside" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-smt-aside" class="margin-toggle"/>
+      <span class="sidenote">
+        So is most of the old-fashioned literature: the more you dig in, the more it becomes entangled with logic, programming language research, type theory, constraints, and proofs. I still remember trying a course on logic during my masters at SFU with <a href="https://www.cs.sfu.ca/~ter/my_web_page/Welcome.html">Evgenia Ternovska</a>, which make me realize that I am not that kind of material. I barely past it.
       </span>
-<pre class="code" style="font-size:0.8rem;">{
-  "type": "function",
-  "function": {
-    "name": "submit_plan",
-    "description": "Submit an assembly plan: the order in which
-      to place the blocks. The physics verifier will check it
-      step by step and reply with pass or the first failing step.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "plan": {"type": "array", "items": {"type": "integer"},
-                 "description": "permutation of every block id"}
-      },
-      "required": ["plan"]
-    }
-  }
-}</pre>
-    </figure>
-
-    <p>
-      One round, transcribed from
-      <a href="web/data/run_llm_basic.json">run_llm_basic.json</a>:
-    </p>
-
-    <figure>
-<pre class="code" style="font-size:0.78rem;">assistant → tool_call:
-  submit_plan(plan=[3, 8, 4, 6, 0, 1, 2, 5, 7, 9])
-
-tool → assistant:
-  REJECTED
-    failed step: 6
-    failing block: 2
-    failing verifier: kinematic
-    reason: block 2 cannot descend — blocked by [5]
-    learned precedence constraints:
-      - place block 2 before block 5
-           (kinematic drop path intersected)
-  Call submit_plan again with a plan that respects these constraints.</pre>
-    </figure>
-
-    <p>
-      The verifier chain is the same Python chain that served Z3 and
-      random.
-      Only the audience of its failure messages changed &mdash; clauses
-      became sentences.
+      However, I want to assure you that the following sections will not be like it, as we are now walking into the territory of deep learning. And indeed, things have changed considerably.
     </p>
 
     <p>
-      The text LLM gets two prompts of very different fidelity.
-      The system prompt, the tool, and the verifier are identical in both;
-      only the first user message differs.
+      Even though we have those fancy tools and solvers, we still have one major questions: if this is a physical task, human could very quickly solve it by one round, as we understand for such a trivial task and design target, we just place the lower blocks first and then the upper ones. Why is it difficult that these solvers would needs multiple rounds of try-and-learn?
     </p>
 
-    <p><b>Basic prose</b> &mdash; contact graph only, no geometry:</p>
-
-    <figure>
-<pre class="code" style="font-size:0.78rem;">Blocks (id, contact neighbours):
-  id=2 neighbors=[0, 3, 5]
-  id=8 neighbors=[5, 6, 9]
-  id=6 neighbors=[3, 8]
-  id=1 neighbors=[0, 4, 5]
-  … (order scrambled, 10 entries total)
-No coordinates are given, and no information about which block is
-above which. Block ids are arbitrary labels and do NOT imply a
-placement order. Gravity is the only physics rule — you must place
-lower blocks before the blocks resting on them.</pre>
-    </figure>
-
-    <p><b>Geometric prose</b> &mdash; same tool, same system, richer
-      first message:</p>
-
-    <figure>
-<pre class="code" style="font-size:0.78rem;">There are 10 blocks and the ground plane at y=0.0. Gravity points
-down (−y). A block can only descend into its slot straight from above.
-Blocks resting on the ground: [0, 2, 3, 1].
-Blocks with nothing on top of them (exposed upper surface): [9].
-
-Per-block geometry (sorted bottom-to-top, then left-to-right):
-  block 0: centroid=(-2.25,+0.50) size=1.50×1.00  rests on ['ground'];
-           supports blocks above: [4]
-  block 2: centroid=(-0.75,+0.50) size=1.50×1.00  rests on ['ground'];
-           supports blocks above: [4, 5]
-  block 3: centroid=(+0.75,+0.50) size=1.50×1.00  rests on ['ground'];
-           supports blocks above: [5, 6]
-  …</pre>
-    </figure>
+    <p>
+      The reason is simply that the solvers we present so far does not really understand the physical world. The simple random agent and Z3 both produced feasible plans, but neither knew a thing about gravity, support, or blocks. All either agent ever saw was integer ids and inequalities like <code>pos(6) &lt; pos(8)</code>. The story about <em>why</em> 6 must come before 8 (block 8 sits above block 6, its descent path is blocked) lives entirely in an abstract space like a blackbox.
+    </p>
 
     <p>
-      Block ids are permuted before they reach the model<label for="sn-perm" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-perm" class="margin-toggle"/><span class="sidenote">A fixed seed permutation; everything returned by the model is mapped back to real ids before verification. See <code>solve_llm(..., permute_ids=True)</code>.</span>,
-      so neither prompt leaks the placement order via the labels
-      themselves.
-      The only asymmetry between the two prompts is how much spatial
-      information we hand the model up front.
+      In fact, we can do a extreme though experiment here, we can switch to a new task of making omelettes, and we can find out that this new task have the exact same problem encoding:
+      Say you are writing a recipe: <em>whisk before folding, preheat before baking, chop before sautéing</em>. Transcribe those constraints in the same <code>pos(a) &lt; pos(b)</code> form and ask Z3 for a linear order. From Z3's point of view, making pyramids and making omelettes are indistinguishable.
+    </p>
+
+    <p>
+      That is the beauty and the curse of such symbolic approaches. The encoding is where the labor of abstraction is done: a human manually convert the problem into an encoding/formulation, and the solver sees nothing beyond it. The solver focus on and only on this abstract symbolic formulation so that it can solve it efficiently. However, this is also what prevent it from obtaining trivial solutions as it does not have any knowledge about gravity, supports, etc.
     </p>
   </section>
 
   <hr/>
 
   <section>
-    <h2>The comparison</h2>
+    <h2>Neural synthesis: LLM and VLM agents</h2>
 
     <p>
-      Same task (<code>pyramid_10</code>), same verifier, five proposers,
-      one run each.<label for="sn-oneshot" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-oneshot" class="margin-toggle"/><span class="sidenote">A single run per proposer. The LLM calls are mildly stochastic; re-running may shift LLM/VLM lines by a round.</span>
-      The metric is <em>best-so-far block similarity</em>:
-      the fraction of blocks the proposer has ever successfully placed
-      before a verifier failure, tracked as the round counter advances.
-      1.0 means the proposer has found a fully feasible plan.
-      It is the &ldquo;best-so-far vs. trials&rdquo; plot you see in
-      black-box optimisation papers.
+      The symbolic route runs on abstract encodings and ignores the world. The neural approach does the opposite.
+      In the opposite, it is grounded with physical knowledge.
+      A language or vision language model has already read a lot of human writing or images about pyramids, arches, scaffolds, gravity, load-bearing and in general much richer knowledge. So we just hand it the task and often it returns a working plan on the first try; when it does not, the same verifier rejects the model's plan just as it rejected Z3's, only now the rejection can be directly used and appended to the memory as plain English.
+    </p>
+
+    <p>
+      Let us begin with using a LLM to solve it. For the target structure, we can trivially describe it in plain text: model coordinates, sizes, and support relationships. Below is a prompt that we use to feed into a LLM:
+    </p>
+
+    <blockquote>
+      <p>There are 10 blocks and the ground plane at y=0.0. Gravity points down (−y). A block can only descend into its slot straight from above. Blocks resting on the ground: [0, 2, 3, 1]. Blocks with nothing on top of them (exposed upper surface): [9].</p>
+      <p>Per-block geometry (sorted bottom-to-top, then left-to-right):<br/>
+        block 0: centroid=(−2.25, +0.50), size=1.50×1.00, rests on ['ground'], supports blocks above: [4].<br/>
+        block 2: centroid=(−0.75, +0.50), size=1.50×1.00, rests on ['ground'], supports blocks above: [4, 5].<br/>
+        block 3: centroid=(+0.75, +0.50), size=1.50×1.00, rests on ['ground'], supports blocks above: [5, 6].<br/>
+        …
+      </p>
+    </blockquote>
+
+    <p>
+      The model replies through a tool call, <code>submit_plan(plan: list[int])</code>.
+      The verifier chain underneath is the same Python code; only the audience of its failure messages has shifted, from logical clauses to English sentences, a failure message would be like this:
+    </p>
+
+    <blockquote>
+      <p>REJECTED at step 6: block 2 cannot descend (kinematic), blocked by [5].</p>
+      <p>Learned lesson: place block 2 before block 5 (kinematic drop path intersected). Call submit_plan again with a plan that respects these constraints.</p>
+    </blockquote>
+
+    <p>
+      In this way, the memory we previously introduces now coinsides with the recent usage of memory to refer to the LLM's context/history prompt. As now the entire sessions' text, the enlarged prompt, is the memory.
+
+      Although we can find that, unsurprisingly, such memory update mechanism is not really needed.
+
+      With the prompt containing the geometric information, <code>pyramid_10</code> can be solved in one-shot: the model applies its "bottom first" prior and returns a feasible plan in a single round.
+    </p>
+
+    <p>
+      We can do another experiment that just gives the LLM a prompt that has no such geometric description, we can see that
+      it falls back almost like the previously tested simple random agent and Z3.
+
+      We deliberately isolate the geometric descriptions and give it a plain prompt, now contains only the adjacency graph, with block ids randomly permuted to avoid any leakage of hints. In this way, the LLM would now degrade to random proposals, learning these blackbox world verifier and would need multiple round to solve it.
+    </p>
+
+    // NOTE for the entire of this below prompt, make it in margin note. And 
+    <blockquote>
+      <p>Blocks (id, contact neighbours):<br/>
+        id=2, neighbors=[0, 3, 5].<br/>
+        id=8, neighbors=[5, 6, 9].<br/>
+        id=6, neighbors=[3, 8].<br/>
+        id=1, neighbors=[0, 4, 5].<br/>
+        … (order scrambled, 10 entries total).
+      </p>
+      <p>No coordinates are given, and no information about which block is above which. Block ids are arbitrary labels and do NOT imply a placement order. Gravity is the only physics rule — you must place lower blocks before the blocks resting on them.</p>
+    </blockquote>
+
+    <h3>Show it a picture! with a VLM</h3>
+
+    <p>
+      Writing geometry down as text perhaps is not a good idea, we can use an image diretly.
+      Here we render the target design to a labelled PNG with all the block IDs, and then hand it to a VLM with the same <code>submit_plan</code> tool and the following prompt
+    </p>
+
+    <figure>
+      <label for="mn-vlm-in" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-vlm-in" class="margin-toggle"/>
+      <span class="marginnote">
+        This is the image the VLM sees. Labels are permuted; no text describes where anything is.
+      </span>
+      <img src="web/data/pyramid_10_vlm_input.png"
+           alt="Input image fed to the VLM"
+           style="max-width:360px; display:block; margin:0 auto; border:1px solid #d8d6cc; border-radius:4px;"/>
+    </figure>
+
+    <p>
+      The user-turn text is correspondingly bare — the image does all the geometry:
+    </p>
+
+    <blockquote>
+      <p>There are 10 blocks with ids [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]. Your job is to find a placement order that passes the verifier.</p>
+      <p>Call submit_plan with a permutation of all 10 ids.</p>
+    </blockquote>
+
+    <p>
+      With a Vision-Language Model (VLM)<label for="sn-kimi" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-kimi" class="margin-toggle"/>
+      <span class="sidenote">We used <code>kimi-k2p5</code> via Fireworks API, this is like less than 0.01$.</span>
+      playing as the agent, <code>pyramid_10</code> are unsurprisingly solved in one shot. The VLM does not need to be told with anything extra, it can simply see everything.
+    </p>
+
+    <h3>Comparision</h3>
+
+    <p>
+      They say no blog should finish without a plot.
+      So here it is showing the five methods we explained so far, working with the same loop, the same enviroment.
+      The metric is <em>best-so-far block similarity</em>: the fraction of blocks the agent has ever successfully placed before a verifier failure. A score of 1.0 means a fully feasible plan.
     </p>
 
     <figure>
       <label for="mn-chart" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-chart" class="margin-toggle"/>
       <span class="marginnote">
-        Best-so-far block-placement score vs. proposer round on
-        <code>pyramid_10</code>. Classical proposers (random, Z3) climb
-        step-by-step as the verifier teaches them precedence constraints.
-        The prior-free LLM (basic prose) lands in the same regime as
-        random &mdash; topology alone is not enough. Once the LLM gets
-        coordinates and layout verbs, it one-shots. The VLM gets no text
-        at all and also one-shots.
+        Best-so-far score vs. round on assembling the structure <code>pyramid_10</code>. Symbolic agents (random, Z3) climb step-by-step as the verifier teaches them precedence constraints. The no-geometry LLM lands in the same regime as random;
+        The LLM (with proper geometric description) and VLM (with an image) both solve it in one shot.
       </span>
       <div id="chart" style="width:100%; max-width:760px; margin:0 auto;"></div>
     </figure>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>Discussion</h2>
+
+    <p>
+      The two approches of symbolic and neural approaches are mirror images of each other. Symbolic synthesis encodes the problem into a formalism cut off from the world and runs a solver that manipulates only symbols. Neural synthesis hands it to a model that already carries rich priors about the world, in whichever modality (text, images). Their strengths and weaknesses are the same fact read from opposite sides.
+    </p>
+
+    <figure>
+      <label for="mn-table" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-table" class="margin-toggle"/>
+      <span class="marginnote">
+        The two paradigms as mirror-image tradeoffs. None of this depends on CEGIS specifically; CEGIS is just the loop that glues whichever agent you pick to a verifier.
+      </span>
+      <div id="fig-tradeoff" style="width:100%; max-width:760px; margin:0 auto;"></div>
+    </figure>
+
+    <p>
+      Symbolic synthesis is <em>powerful because it knows nothing</em>: its algorithm is agnostic to real world, and that is what lets the same backend solve pyramids, recipes, course scheduling, circuit verification, python package dependency resolution tasks alike, so efficient, so reliable, and so trustworthy. Neural synthesis is <em>powerful because it tries to  know a great deal</em>: the priors a foundation model has internalised from terabytes of writing, code, images, videos are exactly what a SAT solver cannot have, and making it so good at guessing.
+    </p>
+
+    <h3>Cost and speed</h3>
+
+    <p>
+      For this toy task, the mirror shows up in cycles and dollars too. Symbolic agents are local CPU work — a handful of (incremental) Z3 queries, finishing in a fraction of a second on a laptop, with all the cost sitting up-front in a few minuts of human labor spent on the encoding. Neural agents, on the other hand, push a few thousand tokens through a frontier model per round.
+    </p>
 
     <figure>
       <label for="mn-bars-rounds" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-bars-rounds" class="margin-toggle"/>
       <span class="marginnote">
-        Rounds to a fully feasible plan. Lower is fewer proposer / verifier
-        cycles; 1 means one-shot.
+        Rounds to a feasible plan. Lower is fewer agent / verifier cycles; 1 means one-shot.
       </span>
       <div id="bars-rounds" style="width:100%; max-width:760px; margin:0 auto;"></div>
     </figure>
@@ -481,115 +555,48 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
       <label for="mn-bars-time" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-bars-time" class="margin-toggle"/>
       <span class="marginnote">
-        Wall-clock time. Z3 and random are local; LLM / VLM include
-        round-trip latency to Fireworks.
+        Wall-clock time as measure from my laptop. Z3 and random run locally; LLM and VLM include round-trip latency to Fireworks API.
       </span>
       <div id="bars-time" style="width:100%; max-width:760px; margin:0 auto;"></div>
     </figure>
-  </section>
-
-  <hr/>
-
-  <section>
-    <h2>4 &middot; VLM proposer &mdash; show, don&rsquo;t describe</h2>
 
     <p>
-      <span class="newthought">Every text prompt</span> in the previous
-      section encoded a choice:
-      centroid vs. vertex list?
-      World-frame or relative?
-      Neighbours as an adjacency list or a graph drawing?
-      Each choice is a guess about what the model needs.
+      Aside from wall time from my laptop, we can have a very rough estimation of computation.
+      A successful LLM or VLM run on <code>pyramid_10</code> costs around \(10^{14}\) FLOPs and roughly one US cent in API fees. The symbolic route is effectively free at runtime and expensive at design time; the neural route is the opposite.
+      <label for="sn-flops" class="margin-toggle sidenote-number"></label>
+      <input type="checkbox" id="sn-flops" class="margin-toggle"/>
+      <span class="sidenote">Very rough estimation. The LLM model we use, DeepSeek-V3p1, activates roughly 37B parameters per token; a successful run on the geometric prompt spends a few thousand tokens, giving \(\sim 2 \times 37\mathrm{B} \times 3\mathrm{K} \approx 2 \times 10^{14}\) FLOPs. Kimi-K2p5 is in the same ballpark. I am not good at these estimations, so my formula might be wrong.</span>
     </p>
+
+    <h3>Ending worlds</h3>
 
     <p>
-      The visual-language case cuts this.
-      Render the target structure to a labelled PNG &mdash; the picture
-      below &mdash; and hand it over with the same
-      <code>submit_plan</code> tool.
-      The first user message is the image;
-      the blocks carry their permuted ids painted on top.
-      Subsequent turns carry the same verifier-feedback tool responses
-      the text LLM gets.
+      Neither paradigm has to win. And in fact, what we want that can actually make a difference, perhaps is something between.
+      We want methods that have reasonable prior about the real world, meanwhile we also want methods can solve complicated problems (thousands, millions of contraints) reliably. The simple <code>pyramid-10</code> task might give reader a false
+      impression that the LLM/VLM is a clear win; but that is not true.
+      LLM/VLM would suffer hugely when we have a much larger problem that is industrial level.
+      I think we will need the LLM/VLM to understand the error (stored as plain text, or in any other format) so that
+      we can have more freedom is designing the feedback we can get from the enviroment, and then we shall also
+      enable them with the right harness/scaffolding that it can know when to rely on its internal knowledge to make
+      quick decisions, or to invoke a more reliable tool and delegate that real complicated planning to the right tool.
+      In this way we can probably has the best outcome.
     </p>
 
-    <figure>
-      <label for="mn-vlm-in" class="margin-toggle">&#8853;</label>
-      <input type="checkbox" id="mn-vlm-in" class="margin-toggle"/>
-      <span class="marginnote">
-        Exact input fed to <code>kimi-k2p5</code>: the target structure
-        with permuted labels. No accompanying text describes where
-        anything is.
-      </span>
-      <img src="web/data/pyramid_10_vlm_input.png"
-           alt="Exact input image fed to the VLM"
-           style="max-width: 320px; display: block; margin: 0 auto;"/>
-    </figure>
-
-    <p>
-      With <code>kimi-k2p5</code><label for="sn-kimi" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-kimi" class="margin-toggle"/><span class="sidenote">Kimi-K2p5 supports chat, image input, and tool calls &mdash; the three things the loop needs. Fireworks serves it through the OpenAI schema.</span>
-      as the proposer, <code>pyramid_10</code> one-shots:
-      the first tool call is already a feasible plan
-      (<a href="web/data/run_vlm.json">run_vlm.json</a>).
-      The VLM does not need to be told which block sits on the ground
-      &mdash; it can see the ground.
-    </p>
-  </section>
-
-  <hr/>
-
-  <section>
-    <h2>Closing</h2>
-
-    <p>
-      <span class="newthought">The verifier is the load-bearing piece.</span>
-      Once a failure can be distilled into a durable, transferable
-      constraint, CEGIS stops caring who does the proposing.
-      A week of Z3 encoding gets you there.
-      A paragraph of prose handed to a frontier model also gets you there.
-      They are not competing paradigms &mdash;
-      they are two settings of the proposer knob.
-    </p>
-
-    <p>
-      What I find more interesting is the same split one level up:
-      use SMT to <em>design the verifier</em>,
-      and an LLM or VLM to <em>propose the plan</em>.
-      The formal side gets what benefits from proof;
-      the statistical side gets what benefits from priors.
-      Neither has to reach across.
-    </p>
-
-  </section>
-
-  <section class="appendix">
-    <hr/>
-    <p class="subtitle">Artefacts</p>
-    <ul>
-      <li><code>src/counterplan/cegis.py</code> &mdash; loop + random proposer.</li>
-      <li><code>src/counterplan/z3_solver.py</code> &mdash; SMT proposer (action-indexed encoding).</li>
-      <li><code>src/counterplan/llm_solver.py</code> &mdash; text-LLM proposer via <code>submit_plan</code> tool; basic / geometric modes.</li>
-      <li><code>src/counterplan/vlm_solver.py</code> &mdash; VLM proposer (rendered PNG + same tool).</li>
-      <li><code>examples/run_experiments.py</code> &mdash; regenerates
-        <code>web/data/experiments.json</code> &amp;
-        <code>web/data/z3_trace.json</code>.</li>
-      <li><a href="web/"><code>web/</code></a> &mdash; Three.js 3D viewer for individual runs.</li>
-    </ul>
   </section>
 
 </article>
 
-<!-- Inline data bundle — makes the page work from file:// too (Safari
-     blocks fetch() on file:// origins). Produced by run_experiments.py. -->
+<!-- Inline data bundle so the page works from file:// too (Safari blocks
+     fetch() on file:// origins). Produced by run_experiments.py. -->
 <script src="web/data/data.js"></script>
 <script>
-  // --- Load data: prefer inlined globals, fall back to fetch() ---
+  // Load data: prefer inlined globals, fall back to fetch().
   function getData(urlJson, globalName) {
     if (window[globalName]) return Promise.resolve(window[globalName]);
     return fetch(urlJson).then(r => r.ok ? r.json() : null);
   }
 
-  // --- Z3 clauses panel ---
+  // Z3 clauses panel.
   getData('web/data/z3_trace.json', 'Z3_TRACE').then(trace => {
     const el = document.getElementById('z3-clauses');
     if (!trace) {
@@ -605,7 +612,7 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
     el.textContent = lines.join('\n');
   });
 
-  // --- Comparison chart (plain SVG, no deps) ---
+  // Comparison chart (plain SVG, no deps).
   getData('web/data/experiments.json', 'EXPERIMENTS')
     .then(data => {
       drawChart(data);
@@ -635,14 +642,12 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
     const x0 = padL, x1 = W - padR;
     const xs = (v) => x0 + (v / maxV) * (x1 - x0);
 
-    // axis line
     const ax = document.createElementNS(svgNS, 'line');
     ax.setAttribute('x1', x0); ax.setAttribute('x2', x1);
     ax.setAttribute('y1', H - padB); ax.setAttribute('y2', H - padB);
     ax.setAttribute('stroke', '#999');
     svg.appendChild(ax);
 
-    // x ticks (4 evenly-spaced)
     for (let t = 0; t <= 4; ++t) {
       const v = (maxV * t) / 4;
       const x = xs(v);
@@ -690,7 +695,6 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
       svg.appendChild(val);
     });
 
-    // skipped runs as greyed labels (no bar)
     skipped.forEach((run, j) => {
       const y = padT + (runs.length + j) * (rowH + gap);
       const lbl = document.createElementNS(svgNS, 'text');
@@ -715,8 +719,8 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
     const legendRows = runs.length + skipped.length;
     const W = 760, H = 360 + 30 + legendRows * 18,
           pad = {l: 58, r: 24, t: 16, b: 76 + legendRows * 18};
-    // x = 0 is the empty-baseline (no proposer attempt yet, score = 0).
-    // The k-th proposer attempt is plotted at x = k.
+    // x = 0 is the empty baseline (no agent attempt yet, score = 0).
+    // The k-th agent attempt is plotted at x = k.
     const maxRounds = Math.max(...runs.map(r => r.score_per_round.length), 8) + 1;
     const ns = document.getElementById('chart');
     const svgNS = 'http://www.w3.org/2000/svg';
@@ -727,7 +731,6 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
     const xs = (i) => pad.l + (i / (maxRounds - 1)) * (W - pad.l - pad.r);
     const ys = (v) => pad.t + (1 - v) * (H - pad.t - pad.b);
 
-    // axes
     const ax = (d) => {
       const p = document.createElementNS(svgNS, 'path');
       p.setAttribute('d', d);
@@ -749,7 +752,6 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
       g.setAttribute('stroke', '#eee');
       svg.insertBefore(g, svg.firstChild);
     });
-    // x ticks
     for (let i = 0; i < maxRounds; ++i) {
       const x = xs(i);
       const t = document.createElementNS(svgNS, 'text');
@@ -764,7 +766,7 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
     xlab.setAttribute('y', H - pad.b + 38);
     xlab.setAttribute('text-anchor', 'middle'); xlab.setAttribute('font-size', 12);
     xlab.setAttribute('fill', '#6b7280');
-    xlab.textContent = 'proposer round';
+    xlab.textContent = 'agent round';
     svg.appendChild(xlab);
 
     const plotMidY = pad.t + (H - pad.t - pad.b) / 2;
@@ -784,8 +786,6 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
       const s = run.score_per_round;
       if (!s || s.length === 0) return;
 
-      // Step-after staircase from the (0, 0) baseline: hold the previous
-      // value horizontally, jump vertically at the next round.
       const pts = [`${xs(0)},${ys(0)}`];
       let prev = 0;
       s.forEach((v, i) => {
@@ -824,7 +824,7 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
       tx.setAttribute('x', legendLeft + 20); tx.setAttribute('y', ly - 3);
       tx.setAttribute('font-size', 12); tx.setAttribute('fill', '#111');
       tx.textContent =
-        `${run.label} — ${run.n_rounds} round${run.n_rounds === 1 ? '' : 's'}, ${run.seconds.toFixed(1)}s`;
+        `${run.label}, ${run.n_rounds} round${run.n_rounds === 1 ? '' : 's'}, ${run.seconds.toFixed(1)}s`;
       svg.appendChild(tx);
     });
 
@@ -833,12 +833,346 @@ Per-block geometry (sorted bottom-to-top, then left-to-right):
       const tx = document.createElementNS(svgNS, 'text');
       tx.setAttribute('x', legendLeft + 20); tx.setAttribute('y', ly - 3);
       tx.setAttribute('font-size', 12); tx.setAttribute('fill', '#9ca3af');
-      tx.textContent = `${run.label} — (${run.skipped})`;
+      tx.textContent = `${run.label} (${run.skipped})`;
       svg.appendChild(tx);
     });
 
     ns.appendChild(svg);
   }
+
+  // ── Diagram helpers ───────────────────────────────────────────────────
+  // Palette matches the vla-reward chart library:
+  //   text #333, muted #6b7280, border #e0dfda, mono = JetBrains Mono.
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const DIAG_FONT = 'et-book, Georgia, serif';
+  const DIAG_MONO = "'JetBrains Mono', 'Menlo', monospace";
+  const DIAG_INK = '#333';
+  const DIAG_MUTED = '#6b7280';
+  const DIAG_FILL = '#fffff8';
+  const DIAG_BORDER = '#b8b6ae';
+  const DIAG_RULE = '#e0dfda';
+
+  function sv(tag, attrs, text) {
+    const e = document.createElementNS(SVG_NS, tag);
+    if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function svgRoot(w, h) {
+    return sv('svg', {
+      viewBox: `0 0 ${w} ${h}`,
+      style: `width:100%; height:auto; font-family: ${DIAG_FONT};`,
+    });
+  }
+
+  // A rounded box with centred text lines. `lines` may be a string or array.
+  function nodeBox(parent, x, y, w, h, lines, opts) {
+    opts = opts || {};
+    const g = sv('g');
+    g.appendChild(sv('rect', {
+      x, y, width: w, height: h, rx: 3, ry: 3,
+      fill: opts.fill || DIAG_FILL,
+      stroke: opts.stroke || DIAG_BORDER,
+      'stroke-width': opts.strokeWidth || 1,
+      'stroke-dasharray': opts.dashed ? '5 4' : '',
+    }));
+    const ls = Array.isArray(lines) ? lines : [lines];
+    const lineH = opts.lineH || 17;
+    const fontSize = opts.fontSize || 13;
+    const cx = x + w / 2;
+    const total = (ls.length - 1) * lineH;
+    const startY = y + h / 2 - total / 2 + fontSize * 0.35;
+    ls.forEach((line, i) => {
+      const isCode = /[_(){}=.]/.test(line) && opts.mono !== false && opts.forceProse !== true;
+      g.appendChild(sv('text', {
+        x: cx, y: startY + i * lineH,
+        'text-anchor': 'middle',
+        'font-size': fontSize,
+        'font-family': (i === 0 && opts.boldFirst) || (opts.mono && isCode)
+          ? "'JetBrains Mono', 'Menlo', monospace"
+          : DIAG_FONT,
+        'font-weight': i === 0 && opts.boldFirst ? 600 : 400,
+        fill: opts.textColor || DIAG_INK,
+      }, line));
+    });
+    parent.appendChild(g);
+    return g;
+  }
+
+  // Arrow from (x1,y1) to (x2,y2) with optional mid-line label and optional
+  // orthogonal "L-shape" path (pass `corner: "h" | "v"`).
+  function arrow(parent, x1, y1, x2, y2, opts) {
+    opts = opts || {};
+    const g = sv('g');
+    let px, py; // the actual tip approach direction
+    let d;
+    if (opts.corner === 'h') {
+      d = `M${x1} ${y1} L${x2} ${y1} L${x2} ${y2}`;
+      px = 0; py = y2 > y1 ? 1 : -1;
+    } else if (opts.corner === 'v') {
+      d = `M${x1} ${y1} L${x1} ${y2} L${x2} ${y2}`;
+      px = x2 > x1 ? 1 : -1; py = 0;
+    } else {
+      d = `M${x1} ${y1} L${x2} ${y2}`;
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      px = dx / len; py = dy / len;
+    }
+    g.appendChild(sv('path', {
+      d, fill: 'none',
+      stroke: opts.stroke || DIAG_INK,
+      'stroke-width': opts.strokeWidth || 1.4,
+      'stroke-dasharray': opts.dashed ? '4 3' : '',
+    }));
+    // arrowhead
+    const size = opts.arrowSize || 8;
+    const perpX = -py, perpY = px;
+    const baseX = x2 - px * size, baseY = y2 - py * size;
+    const a1x = baseX + perpX * size * 0.5, a1y = baseY + perpY * size * 0.5;
+    const a2x = baseX - perpX * size * 0.5, a2y = baseY - perpY * size * 0.5;
+    g.appendChild(sv('path', {
+      d: `M${x2} ${y2} L${a1x} ${a1y} L${a2x} ${a2y} Z`,
+      fill: opts.stroke || DIAG_INK, stroke: 'none',
+    }));
+    if (opts.label) {
+      let lx, ly;
+      if (opts.corner === 'h') { lx = (x1 + x2) / 2; ly = y1 - 6; }
+      else if (opts.corner === 'v') { lx = x1 + 6; ly = (y1 + y2) / 2; }
+      else { lx = (x1 + x2) / 2; ly = (y1 + y2) / 2 - 6; }
+      g.appendChild(sv('text', {
+        x: lx, y: ly,
+        'text-anchor': opts.labelAnchor || 'middle',
+        'font-size': 12,
+        'font-family': DIAG_FONT,
+        fill: DIAG_MUTED,
+      }, opts.label));
+    }
+    parent.appendChild(g);
+    return g;
+  }
+
+  // ── Figure: RL actor / environment loop ──────────────────────────────
+  // A small circular arrow inside a box. Draws a ~300° arc with an
+  // arrowhead at its tail and a label below.
+  function circularArrow(parent, cx, cy, r, label) {
+    const g = sv('g');
+    // 300° arc from angle -60° to 240° (clockwise)
+    const rad = (a) => (a * Math.PI) / 180;
+    const a0 = -60, a1 = 240;
+    const x0 = cx + r * Math.cos(rad(a0)), y0 = cy + r * Math.sin(rad(a0));
+    const x1 = cx + r * Math.cos(rad(a1)), y1 = cy + r * Math.sin(rad(a1));
+    g.appendChild(sv('path', {
+      d: `M${x0} ${y0} A${r} ${r} 0 1 1 ${x1} ${y1}`,
+      fill: 'none', stroke: DIAG_INK, 'stroke-width': 1.4,
+    }));
+    // Arrowhead at (x1, y1), tangent direction: perpendicular to radius.
+    // At angle a1=240°, tangent for CW motion points at a1+90°.
+    const ta = rad(a1 + 90);
+    const tx = Math.cos(ta), ty = Math.sin(ta);
+    const size = 6;
+    const perpX = -ty, perpY = tx;
+    const baseX = x1 - tx * size, baseY = y1 - ty * size;
+    const h1x = baseX + perpX * size * 0.5, h1y = baseY + perpY * size * 0.5;
+    const h2x = baseX - perpX * size * 0.5, h2y = baseY - perpY * size * 0.5;
+    g.appendChild(sv('path', {
+      d: `M${x1} ${y1} L${h1x} ${h1y} L${h2x} ${h2y} Z`,
+      fill: DIAG_INK, stroke: 'none',
+    }));
+    if (label) {
+      g.appendChild(sv('text', {
+        x: cx, y: cy + r + 14,
+        'text-anchor': 'middle', 'font-size': 11,
+        'font-family': DIAG_FONT, fill: DIAG_MUTED,
+      }, label));
+    }
+    parent.appendChild(g);
+    return g;
+  }
+
+  function drawRLDiagram(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const W = 600, H = 210;
+    const s = svgRoot(W, H);
+    nodeBox(s, 80, 50, 160, 110, 'AGENT',
+            { boldFirst: true, lineH: 14 });
+    nodeBox(s, 360, 50, 200, 110, 'ENVIRONMENT', { boldFirst: true });
+    arrow(s, 240, 82, 360, 82, { label: 'action' });
+    arrow(s, 360, 128, 248, 128, { label: 'feedback' });
+    // Circular arrow inside the agent near the feedback entry, showing
+    // the "learn from feedback" self-update step.
+    circularArrow(s, 170, 130, 10, 'learn from feedback');
+    el.appendChild(s);
+  }
+
+  // ── Figure: CEGIS = agent + memory loop ──────────────────────────────
+  // Same shape as the RL diagram, but the "learn from feedback" self-loop
+  // inside the agent now has a memory Φ attached: each failure deposits
+  // one more clause into Φ, and the agent must respect all clauses in Φ
+  // when it proposes the next action.
+  function drawCEGISDiagram(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const W = 720, H = 230;
+    const s = svgRoot(W, H);
+    // Outer AGENT box: plain rect with a header label at the top so the
+    // inner MEMORY box can sit below it without overlapping the label.
+    const ax = 60, ay = 40, aw = 280, ah = 150;
+    s.appendChild(sv('rect', {
+      x: ax, y: ay, width: aw, height: ah, rx: 3, ry: 3,
+      fill: DIAG_FILL, stroke: DIAG_BORDER, 'stroke-width': 1,
+    }));
+    s.appendChild(sv('text', {
+      x: ax + aw / 2, y: ay + 20,
+      'text-anchor': 'middle', 'font-size': 13, 'font-weight': 600,
+      'font-family': DIAG_MONO, fill: DIAG_INK,
+    }, 'AGENT'));
+    // Inner MEMORY Φ box, dashed, nested inside the agent (below the label).
+    nodeBox(s, ax + 30, ay + 45, aw - 60, 85,
+            ['MEMORY  Φ', 'learned clauses:', '"A before B", …'],
+            { boldFirst: true, dashed: true, fontSize: 12, lineH: 16 });
+    // Environment on the right.
+    nodeBox(s, 460, 40, 220, 150,
+            ['ENVIRONMENT', '(verifier inside)'],
+            { boldFirst: true });
+    // Action / feedback arrows between agent and environment.
+    arrow(s, 340, 75, 460, 75, { label: 'action (respects Φ)' });
+    arrow(s, 460, 160, 340, 160, { label: 'feedback = new clause' });
+    // "learn from feedback" circular arrow at the bottom-inside of agent.
+    circularArrow(s, 310, 160, 10, 'learn from feedback');
+    el.appendChild(s);
+  }
+
+  // ── Figure: SMT-specific CEGIS instantiation ─────────────────────────
+  function drawSMTLoop(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const W = 760, H = 330;
+    const s = svgRoot(W, H);
+    nodeBox(s, 40, 30, 260, 90,
+            ['AGENT = z3.Solver', 'solver.check()',
+             'unsat → infeasible (proof)'],
+            { boldFirst: true, mono: true });
+    nodeBox(s, 460, 30, 260, 90,
+            ['VERIFIER', '(physics referee)',
+             'pass → done'],
+            { boldFirst: true });
+    nodeBox(s, 40, 220, 260, 90,
+            ['MEMORY (SMT assertions)',
+             'Distinct + precedence clauses'],
+            { boldFirst: true, dashed: true });
+    nodeBox(s, 460, 220, 260, 90,
+            ['solver.add(',
+             '  precedence_clause(a, b))'],
+            { mono: true });
+    arrow(s, 300, 65, 460, 65, { label: 'plan = model.eval(action)' });
+    arrow(s, 590, 120, 590, 228, { label: 'fail @ step k', labelAnchor: 'start' });
+    arrow(s, 460, 265, 308, 265, { label: 'add clause' });
+    arrow(s, 170, 220, 170, 128, { label: 'assertions', labelAnchor: 'start' });
+    el.appendChild(s);
+  }
+
+  // ── Figure: tradeoff table as SVG (plot-style) ───────────────────────
+  function drawTradeoffTable(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const rows = [
+      ['What the agent sees',
+       'Precedence clauses on anonymous integer ids',
+       'A target image, or paragraphs of geometry'],
+      ['Priors',
+       'None. Agnostic by construction.',
+       "Rich. Trained on humans' spatial writing."],
+      ['Upside of that',
+       'Reusable across domains. Decades of SAT / SMT engineering for free. Can prove infeasibility.',
+       'Guesses that hit on the first try when the task sits near the training prior.'],
+      ['Downside of that',
+       'No world knowledge. Must explore until the verifier has supplied every clue.',
+       'No guarantees. Outside the prior, degrades to the same search as the symbolic baseline.'],
+    ];
+    const headers = ['', 'Symbolic synthesis', 'Grounded neural synthesis'];
+    const W = 760;
+    const colW = [170, 295, 295];
+    const colX = [0, colW[0], colW[0] + colW[1]];
+    const headerH = 38;
+    const rowH = 78;
+    const H = headerH + rows.length * rowH + 10;
+
+    const s = svgRoot(W, H);
+    // Header top rule
+    s.appendChild(sv('line', {
+      x1: 0, y1: 0, x2: W, y2: 0,
+      stroke: DIAG_INK, 'stroke-width': 1,
+    }));
+    // Header bottom rule
+    s.appendChild(sv('line', {
+      x1: 0, y1: headerH, x2: W, y2: headerH,
+      stroke: DIAG_INK, 'stroke-width': 1,
+    }));
+    headers.forEach((h, i) => {
+      if (!h) return;
+      s.appendChild(sv('text', {
+        x: colX[i] + 12, y: headerH / 2 + 5,
+        'font-size': 14, 'font-family': DIAG_FONT,
+        'font-weight': 600, fill: DIAG_INK,
+      }, h));
+    });
+
+    // Rows: text wrapping via tspan.
+    function wrap(text, maxChars) {
+      const words = text.split(' ');
+      const lines = [];
+      let line = '';
+      for (const w of words) {
+        if ((line + ' ' + w).trim().length > maxChars) {
+          lines.push(line); line = w;
+        } else {
+          line = (line ? line + ' ' : '') + w;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    rows.forEach((r, ri) => {
+      const y0 = headerH + ri * rowH;
+      // row separator
+      s.appendChild(sv('line', {
+        x1: 0, y1: y0 + rowH, x2: W, y2: y0 + rowH,
+        stroke: ri === rows.length - 1 ? DIAG_INK : DIAG_RULE,
+        'stroke-width': 1,
+      }));
+      r.forEach((cell, ci) => {
+        const maxChars = Math.floor(colW[ci] / 7.2);
+        const lines = wrap(cell, maxChars);
+        const lineH = 17;
+        const startY = y0 + 22;
+        const t = sv('text', {
+          x: colX[ci] + 12,
+          y: startY,
+          'font-size': 13, 'font-family': DIAG_FONT,
+          'font-weight': ci === 0 ? 500 : 400,
+          fill: ci === 0 ? '#333' : DIAG_INK,
+        });
+        lines.forEach((ln, li) => {
+          t.appendChild(sv('tspan', {
+            x: colX[ci] + 12,
+            y: startY + li * lineH,
+          }, ln));
+        });
+        s.appendChild(t);
+      });
+    });
+
+    el.appendChild(s);
+  }
+
+  // Render all four diagrams.
+  drawRLDiagram('fig-rl');
+  drawCEGISDiagram('fig-cegis-mem');
+  drawSMTLoop('fig-smt-loop');
+  drawTradeoffTable('fig-tradeoff');
 </script>
 
 </body>

@@ -46,9 +46,9 @@ const PAL_LIGHT = {
 const PAL = (new URLSearchParams(location.search).get('theme') === 'light')
             ? PAL_LIGHT
             : PAL_DARK;
-// Loop playback instead of stopping on the last frame — used by the blog
-// embed so the animation keeps replaying in a hands-off viewer.
-const LOOP_PLAYBACK = new URLSearchParams(location.search).get('loop') === '1';
+// Loop playback instead of stopping on the last frame. Default on; pass
+// ?loop=0 to keep the animation stopped on the last frame.
+const LOOP_PLAYBACK = new URLSearchParams(location.search).get('loop') !== '0';
 // Suppress the precedence-arrow overlay — the blog embed wants the clean
 // animation without the constraint-graph layer.
 const SHOW_ARROWS   = new URLSearchParams(location.search).get('arrows') !== 'off';
@@ -978,19 +978,19 @@ initScene();
 initPreview();
 requestAnimationFrame((t) => { lastTick = t; animate(t); });
 
-// URL-param overrides: ?structure=pyramid_10 picks a trace up front,
-// ?autoplay=1 starts playback once the trace is loaded. Used by the
-// blog's iframe embed.
+// URL-param overrides: ?structure=pyramid_10 picks a trace up front.
+// Autoplay is on by default; pass ?autoplay=0 to start paused.
 const _params = new URLSearchParams(location.search);
 const _overrideStruct = _params.get('structure');
 if (_overrideStruct) {
   const opt = [...traceSelect.options].find(o => o.value === _overrideStruct);
   if (opt) traceSelect.value = _overrideStruct;
 }
+const _autoplay = _params.get('autoplay') !== '0';
 loadTrace(traceSelect.value).then?.(() => {
-  if (_params.get('autoplay') === '1' && !playing) togglePlay();
+  if (_autoplay && !playing) togglePlay();
 });
-if (_params.get('autoplay') === '1') {
+if (_autoplay) {
   // loadTrace isn't typed as a promise in older paths; use a timeout fallback.
   setTimeout(() => { if (!playing && framePlan.length) togglePlay(); }, 500);
 }

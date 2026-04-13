@@ -10,8 +10,6 @@ html, body { background-color: #fffff8 !important; color: #111 !important; }
   blockquote, .sidenote, .marginnote { color: #444 !important; }
 }
 
-article { padding: 1rem 0; padding-left: 5%; margin-left: 1rem; }
-
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 code { font-family: 'JetBrains Mono', 'Menlo', monospace; }
 
@@ -22,8 +20,8 @@ pre.code {
   border: 1px solid #e7e6df;
   border-radius: 4px;
   padding: 0.7rem 1rem;
-  overflow-x: auto;
 }
+
 
 ul li { margin: 0.25rem 0; }
 
