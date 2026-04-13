@@ -1,0 +1,53 @@
+{
+  "rounds": [
+    {
+      "round": 0,
+      "plan": [
+        2,
+        8,
+        3,
+        5,
+        6,
+        4,
+        9,
+        0,
+        1,
+        7
+      ],
+      "failure_step": null,
+      "failed_block": null,
+      "failed_verifier": null,
+      "learned_constraints": []
+    }
+  ],
+  "llm_turns": [
+    {
+      "round": 0,
+      "plan": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "verifier_message": "ACCEPTED \u2014 every step passed the verifier chain."
+    }
+  ],
+  "final_plan": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ]
+}

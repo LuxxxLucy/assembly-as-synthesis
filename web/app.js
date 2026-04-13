@@ -8,7 +8,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // ── Palette ─────────────────────────────────────────────────────────────
 // Warm-cool pastel. Outline ink is near-black for crisp toon edges.
-const PAL = {
+// Two palettes: the default cold/architectural one the standalone viewer
+// was designed around, and a light "blog" palette that matches Tufte CSS's
+// #fffff8 page background. The light palette is selected by the embed via
+// `?theme=light`. Everything structural stays the same; only the colour
+// constants change.
+const PAL_DARK = {
   bg:       0x1C2030,
   ground:   0x2D3448,
   ink:      0x15181F,
@@ -23,6 +28,30 @@ const PAL = {
   keyLight: 0xFFE8C8,
   fillLight:0x7A8FB0,
 };
+const PAL_LIGHT = {
+  bg:       0xFFFFF8,   // Tufte cream
+  ground:   0xE6E2D2,   // warm light stone
+  ink:      0x3B3A36,   // Tufte body text
+  placed:   0xB9C6DC,   // soft dusty blue
+  active:   0xE1876A,   // warmer coral
+  failed:   0xBC6478,   // muted rose
+  success:  0x8DBBA0,   // sage mint
+  ghost:    0xA8A8A2,
+  arrowKinematic: 0xD9A267,
+  arrowStability: 0xE1876A,
+  arrowLanding:   0x9AA3AE,
+  keyLight: 0xFFF2D8,
+  fillLight:0xBCC4CE,
+};
+const PAL = (new URLSearchParams(location.search).get('theme') === 'light')
+            ? PAL_LIGHT
+            : PAL_DARK;
+// Loop playback instead of stopping on the last frame — used by the blog
+// embed so the animation keeps replaying in a hands-off viewer.
+const LOOP_PLAYBACK = new URLSearchParams(location.search).get('loop') === '1';
+// Suppress the precedence-arrow overlay — the blog embed wants the clean
+// animation without the constraint-graph layer.
+const SHOW_ARROWS   = new URLSearchParams(location.search).get('arrows') !== 'off';
 
 const DEFAULT_DEPTH = 1.0;
 const DROP_HEIGHT   = 6.0;
@@ -282,12 +311,17 @@ function buildBlocks() {
 }
 
 function fitCamera() {
+  // Tight iso-aware fit — same formula the preview panel uses so both
+  // panels render blocks at the same on-screen size. Iso projection
+  // stretches the extents ~1.2× vertically and ~1.15× horizontally;
+  // compute the smaller ortho half-height that covers both projections.
   const ex = trace.structure.extents;
   const spanX = Math.max(1.5, ex.max_x - ex.min_x);
   const spanY = Math.max(1.5, ex.max_y - ex.min_y);
-  const span  = Math.max(spanX, spanY);
-  const vs = span * 0.8 + 1.8;
-  const aspect = canvasMount.clientWidth / canvasMount.clientHeight;
+  const aspect = canvasMount.clientWidth / Math.max(1, canvasMount.clientHeight);
+  const needY = (spanY * 1.0 + spanX * 0.35) / 2;
+  const needX = (spanX * 1.0 + spanY * 0.35) / (2 * aspect);
+  const vs = Math.max(needX, needY) * 1.15 + 0.25;
   camera.left = -vs * aspect; camera.right = vs * aspect;
   camera.top = vs; camera.bottom = -vs;
   camera.updateProjectionMatrix();
@@ -443,28 +477,36 @@ function setState(m, state) {
     case 'failed':  color = PAL.failed;  opacity = 1.0; break;
     case 'success': color = PAL.success; opacity = 1.0; break;
     case 'hidden':  color = PAL.ghost;   opacity = 0.0; break;
-    default:        color = PAL.ghost;   opacity = 0.15; break;  // ghost
+    // Ghost state (unplaced block) — render nothing. The user found the
+    // faint grey placeholders distracting; hiding them entirely trades
+    // the "you will place this" cue for a cleaner stage.
+    default:        color = PAL.ghost;   opacity = 0.0; break;
   }
   const needsAlpha = opacity < 1.0;
   m.material.color.setHex(color);
   m.material.opacity     = opacity;
   m.material.transparent = needsAlpha;
-  m.outlineMat.opacity     = (state === 'hidden') ? 0.0 : 1.0;
+  m.outlineMat.opacity     = (opacity > 0) ? 1.0 : 0.0;
   m.outlineMat.transparent = needsAlpha;
-  m.edges.material.opacity     = (state === 'hidden') ? 0.0 : 1.0;
+  m.edges.material.opacity     = (opacity > 0) ? 1.0 : 0.0;
   m.edges.material.transparent = needsAlpha;
   m.body.visible = opacity > 0.001;
   m.outline.visible = m.body.visible;
   m.edges.visible = m.body.visible;
 
-  // Target ghost (dashed outline at basePos) — visible only while the body
-  // is animating away from its target (dropping in, failing, being lifted
-  // away). Hidden when the body already sits on-target or is merely a ghost
-  // preview.
-  const showAnchor = state === 'active' || state === 'failed';
+  // Dashed anchor at basePos — marks every target slot. Shown for:
+  //   * ghost  (not yet placed; anchor alone shows where the block lands)
+  //   * active (currently dropping; coloured in the "active" tint)
+  //   * failed (currently being rejected; coloured in the "failed" tint)
+  // Hidden for 'placed' / 'success' (body already on target) and 'hidden'.
+  const showAnchor = !(state === 'placed' || state === 'success' || state === 'hidden');
   m.anchor.visible = showAnchor;
   if (showAnchor) {
-    m.anchorMat.color.setHex(state === 'failed' ? PAL.failed : PAL.active);
+    let c;
+    if (state === 'failed')      c = PAL.failed;
+    else if (state === 'active') c = PAL.active;
+    else                         c = PAL.ghost;   // default + explicit 'ghost'
+    m.anchorMat.color.setHex(c);
   }
 }
 
@@ -635,11 +677,20 @@ function renderFrame(idx) {
     }
   }
 
-  // Arrows — accumulate all learned so far, highlight the newly learned ones.
+  // Arrows — constraints are knowledge the proposer uses when it builds
+  // the NEXT plan. During round N's propose / place / fail phases, only
+  // constraints from rounds 0..N-1 were available. In the 'learn' phase
+  // the round's newly-learned edges animate in (tagged as active); from
+  // round N+1 onward those sit with the rest of the static set.
   const allC = [];
-  for (let i = 0; i <= frame.round; i++) allC.push(...trace.rounds[i].constraints_learned);
-  const activeC = frame.phase === 'learn' ? rd.constraints_learned : [];
-  rebuildArrows(allC, activeC);
+  for (let i = 0; i < frame.round; i++) allC.push(...trace.rounds[i].constraints_learned);
+  let activeC = [];
+  if (frame.phase === 'learn') {
+    allC.push(...rd.constraints_learned);
+    activeC = rd.constraints_learned;
+  }
+  if (SHOW_ARROWS) rebuildArrows(allC, activeC);
+  else             rebuildArrows([], []);
 
   updatePanel(frame, rd, allC, activeC);
 }
@@ -696,7 +747,16 @@ function animate(now) {
     const STEP = 1 / 30;
     while (frameAccum > STEP) {
       frameAccum -= STEP;
-      if (currentFrame >= framePlan.length - 1) { togglePlay(); break; }
+      if (currentFrame >= framePlan.length - 1) {
+        if (LOOP_PLAYBACK) {
+          // Pause briefly on the end frame, then restart from the top.
+          frameAccum = -0.9;  // ~0.9s pause before the next tick progresses
+          setFrame(0);
+          break;
+        }
+        togglePlay();
+        break;
+      }
       setFrame(currentFrame + 1);
     }
   }
@@ -751,11 +811,20 @@ function initPreview() {
   previewRenderer = new THREE.WebGLRenderer({ antialias: true });
   previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   previewRenderer.setSize(w, h);
+  previewRenderer.shadowMap.enabled = true;
+  previewRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
   mount.appendChild(previewRenderer.domElement);
 
-  // Lights — same warm-cool key/fill as the main scene.
+  // Lights — same warm-cool key/fill as the main scene. Key casts shadow
+  // so the preview matches the left panel's shadow treatment.
   const key = new THREE.DirectionalLight(PAL.keyLight, 1.0);
   key.position.set(8, 14, 6);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -12; key.shadow.camera.right = 12;
+  key.shadow.camera.top = 12;   key.shadow.camera.bottom = -12;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 50;
+  key.shadow.bias = -0.0005;
   previewScene.add(key);
   const fill = new THREE.DirectionalLight(PAL.fillLight, 0.5);
   fill.position.set(-8, 6, -4);
@@ -767,6 +836,7 @@ function initPreview() {
     new THREE.MeshLambertMaterial({ color: PAL.ground }),
   );
   ground.position.y = -0.3;
+  ground.receiveShadow = true;
   previewScene.add(ground);
   const groundEdge = new THREE.LineSegments(
     new THREE.EdgesGeometry(ground.geometry),
@@ -809,6 +879,8 @@ function makeStaticBlock(blockData, color) {
 
   const body = new THREE.Mesh(geom, new THREE.MeshLambertMaterial({ color }));
   body.renderOrder = 1;
+  body.castShadow = true;
+  body.receiveShadow = true;
 
   const outline = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
     color: PAL.ink, side: THREE.BackSide,
@@ -879,9 +951,15 @@ function buildPreview() {
 async function loadTrace(name) {
   if (playing) togglePlay();
   try {
-    const resp = await fetch(`data/${name}.json`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    trace = await resp.json();
+    // Prefer the inlined bundle (window.TRACES[name]) when present — this
+    // is what lets the blog/iframe work from file:// where fetch() fails.
+    if (window.TRACES && window.TRACES[name]) {
+      trace = window.TRACES[name];
+    } else {
+      const resp = await fetch(`data/${name}.json`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      trace = await resp.json();
+    }
     buildBlocks();
     buildPreview();
     framePlan = buildFramePlan();
@@ -899,4 +977,20 @@ traceSelect.addEventListener('change', () => loadTrace(traceSelect.value));
 initScene();
 initPreview();
 requestAnimationFrame((t) => { lastTick = t; animate(t); });
-loadTrace(traceSelect.value);
+
+// URL-param overrides: ?structure=pyramid_10 picks a trace up front,
+// ?autoplay=1 starts playback once the trace is loaded. Used by the
+// blog's iframe embed.
+const _params = new URLSearchParams(location.search);
+const _overrideStruct = _params.get('structure');
+if (_overrideStruct) {
+  const opt = [...traceSelect.options].find(o => o.value === _overrideStruct);
+  if (opt) traceSelect.value = _overrideStruct;
+}
+loadTrace(traceSelect.value).then?.(() => {
+  if (_params.get('autoplay') === '1' && !playing) togglePlay();
+});
+if (_params.get('autoplay') === '1') {
+  // loadTrace isn't typed as a promise in older paths; use a timeout fallback.
+  setTimeout(() => { if (!playing && framePlan.length) togglePlay(); }, 500);
+}

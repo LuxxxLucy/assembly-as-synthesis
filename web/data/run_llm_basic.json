@@ -1,0 +1,227 @@
+{
+  "rounds": [
+    {
+      "round": 0,
+      "plan": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "failure_step": 0,
+      "failed_block": 0,
+      "failed_verifier": "stability",
+      "learned_constraints": [
+        {
+          "before": 4,
+          "after": 0,
+          "source": "stability"
+        },
+        {
+          "before": 6,
+          "after": 0,
+          "source": "stability"
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "plan": [
+        2,
+        4,
+        6,
+        8,
+        3,
+        5,
+        9,
+        1,
+        7,
+        0
+      ],
+      "failure_step": 1,
+      "failed_block": 4,
+      "failed_verifier": "stability",
+      "learned_constraints": [
+        {
+          "before": 3,
+          "after": 4,
+          "source": "stability"
+        },
+        {
+          "before": 8,
+          "after": 4,
+          "source": "stability"
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "plan": [
+        2,
+        3,
+        5,
+        6,
+        8,
+        4,
+        9,
+        1,
+        7,
+        0
+      ],
+      "failure_step": 4,
+      "failed_block": 8,
+      "failed_verifier": "kinematic",
+      "learned_constraints": [
+        {
+          "before": 8,
+          "after": 6,
+          "source": "kinematic"
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "plan": [
+        2,
+        3,
+        5,
+        8,
+        4,
+        6,
+        9,
+        1,
+        7,
+        0
+      ],
+      "failure_step": 9,
+      "failed_block": 0,
+      "failed_verifier": "kinematic",
+      "learned_constraints": [
+        {
+          "before": 0,
+          "after": 7,
+          "source": "kinematic"
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "plan": [
+        2,
+        3,
+        5,
+        8,
+        4,
+        6,
+        9,
+        0,
+        1,
+        7
+      ],
+      "failure_step": null,
+      "failed_block": null,
+      "failed_verifier": null,
+      "learned_constraints": []
+    }
+  ],
+  "llm_turns": [
+    {
+      "round": 0,
+      "plan": [
+        7,
+        8,
+        0,
+        2,
+        5,
+        3,
+        4,
+        9,
+        1,
+        6
+      ],
+      "verifier_message": "REJECTED\n  failed step: 0\n  failing block: 0\n  failing verifier: stability\n  reason: block 0 unstable without [4, 6]\n  learned precedence constraints:\n    - place block 4 before block 0  (4 must support 0)\n    - place block 6 before block 0  (6 must support 0)\nCall submit_plan again with a plan that respects these constraints."
+    },
+    {
+      "round": 1,
+      "plan": [
+        0,
+        5,
+        4,
+        1,
+        2,
+        3,
+        6,
+        8,
+        9,
+        7
+      ],
+      "verifier_message": "REJECTED\n  failed step: 1\n  failing block: 4\n  failing verifier: stability\n  reason: block 4 unstable without [3, 8]\n  learned precedence constraints:\n    - place block 3 before block 4  (3 must support 4)\n    - place block 8 before block 4  (8 must support 4)\nCall submit_plan again with a plan that respects these constraints."
+    },
+    {
+      "round": 2,
+      "plan": [
+        0,
+        2,
+        3,
+        4,
+        1,
+        5,
+        6,
+        8,
+        9,
+        7
+      ],
+      "verifier_message": "REJECTED\n  failed step: 4\n  failing block: 8\n  failing verifier: kinematic\n  reason: block 8 collides with [6] on descent\n  learned precedence constraints:\n    - place block 8 before block 6  (6 blocks descent of 8)\nCall submit_plan again with a plan that respects these constraints."
+    },
+    {
+      "round": 3,
+      "plan": [
+        0,
+        2,
+        3,
+        1,
+        5,
+        4,
+        6,
+        8,
+        9,
+        7
+      ],
+      "verifier_message": "REJECTED\n  failed step: 9\n  failing block: 0\n  failing verifier: kinematic\n  reason: block 0 collides with [7] on descent\n  learned precedence constraints:\n    - place block 0 before block 7  (7 blocks descent of 0)\nCall submit_plan again with a plan that respects these constraints."
+    },
+    {
+      "round": 4,
+      "plan": [
+        0,
+        2,
+        3,
+        1,
+        5,
+        4,
+        6,
+        7,
+        8,
+        9
+      ],
+      "verifier_message": "ACCEPTED \u2014 every step passed the verifier chain."
+    }
+  ],
+  "final_plan": [
+    0,
+    2,
+    3,
+    1,
+    5,
+    4,
+    6,
+    7,
+    8,
+    9
+  ]
+}

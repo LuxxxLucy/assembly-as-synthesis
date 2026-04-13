@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assembly as Synthesis</title>
+  <link rel="stylesheet" href="https://edwardtufte.github.io/tufte-css/tufte.css" />
+  <link rel="stylesheet" href="blog.css" />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+          async></script>
+</head>
+<body>
+<article>
+
+  <h1>Assembly as Synthesis</h1>
+
+  <section>
+    <p class="subtitle">Jialin Lu &middot; April 2026</p>
+    <p>
+      <label for="mn-code" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-code" class="margin-toggle"/>
+      <span class="marginnote">
+        Code available at
+        <a href="https://github.com/LuxxxLucy/assembly-as-synthesis">LuxxxLucy/assembly-as-synthesis</a>.
+        Interactive 3D viewer: <a href="web/">open the demo</a>.
+      </span>
+      <em>TL;DR</em>&ensp;
+      Ordering blocks so the partial tower never topples is a
+      <em>program synthesis</em> problem:
+      search for a program (here, a placement order) that satisfies a
+      specification (here, physics).
+      Modern synthesis splits that search into a <em>proposer</em> that
+      guesses and a <em>verifier</em> that checks;
+      the proposer can be a SAT/SMT solver, a random sampler, an LLM,
+      or a VLM.
+      Same loop, different proposer.
+      Five of them, on one ten-block task, side by side.
+    </p>
+  </section>
+
+  <section>
+    <h2>Two ways to do it</h2>
+
+    <p>
+      <span class="newthought">Program synthesis has a classical recipe.</span>
+      Encode the problem as logical constraints, hand them to an SMT solver
+      &mdash; a theorem prover that decides satisfiability over theories
+      like integers, arrays, and linear arithmetic &mdash;
+      and read the plan off its model.
+      Sketch<label for="sn-sketch" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-sketch" class="margin-toggle"/><span class="sidenote">Solar-Lezama, <em>Program Synthesis by Sketching</em> (PhD thesis, Berkeley, 2008). The canonical modern synthesis system.</span>
+      did this for partial programs;
+      FlashFill<label for="sn-ff" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-ff" class="margin-toggle"/><span class="sidenote">Gulwani, <em>Automating String Processing in Spreadsheets Using Input-Output Examples</em> (POPL 2011). Shipped in Excel.</span>
+      did it for spreadsheet string transformations.
+      The craft is in the encoding.
+    </p>
+
+    <p>
+      The classical route buys a strong guarantee:
+      the solver either returns a plan or <em>proves</em> none exists.
+      The price is paid in priors.
+      A SAT/SMT solver does not know that bottom blocks go first, that
+      arches need mutual thrust, that a heavy block on a narrow base is
+      a bad idea.
+      It knows only what the encoding says.
+      Nothing accelerates the search beyond what the user wrote down by
+      hand.
+    </p>
+
+    <p>
+      The second route runs on priors instead of proofs.
+      A large language model is a statistical proposer that has read an
+      enormous amount about how people solve physical problems &mdash;
+      pyramids, scaffolding, keystones.
+      Hand it the task and it often proposes a workable plan on the
+      first try.
+      When it doesn&rsquo;t, the same verifier that rejected Z3&rsquo;s
+      plan can reject the LLM&rsquo;s.
+      The rejection message, in English, is exactly the shape of
+      feedback the model was trained to consume.
+    </p>
+
+    <p>
+      Both routes run the same loop.
+      It is called <em>counterexample-guided inductive synthesis</em>, or
+      CEGIS<label for="sn-cegis" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-cegis" class="margin-toggle"/><span class="sidenote">Solar-Lezama et al., <em>Combinatorial Sketching for Finite Programs</em> (ASPLOS 2006).</span>:
+      propose a candidate, verify it, and when verification fails,
+      distill the failure into a reusable constraint before proposing again.
+      The verifier does not just say no &mdash;
+      it hands back a reason the next proposal must respect.
+      That is the whole trick, and it is what makes a random sampler and
+      a solver comparable on the same axis.
+    </p>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>The task &amp; the verifier</h2>
+
+    <p>
+      <span class="newthought">The task</span> is to output the placement
+      order for a target arrangement of blocks.
+      Every prefix of the order has to stand up,
+      and every next block has to reach its slot from above without
+      clipping the ones already placed.
+    </p>
+
+    <figure id="task-viewer">
+      <label for="mn-task-viewer" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-task-viewer" class="margin-toggle"/>
+      <span class="marginnote">
+        Running example: <code>pyramid_10</code>, auto-playing. Ten
+        blocks; gravity points down; 10! = 3,628,800 orderings. Most are
+        infeasible: a mid-row block cannot descend once a block above it
+        already sits in its slot. Left panel shows the proposer placing
+        blocks; right panel shows the target structure. For other
+        structures and manual control, open the
+        <a href="web/" target="_blank">full viewer</a>.
+      </span>
+      <iframe src="web/embed.html?structure=pyramid_10_blog&autoplay=1&theme=light&loop=1"
+              title="CEGIS task viewer"
+              style="width:100%; height:460px; border:1px solid #d8d6cc;
+                     border-radius:4px; background:#fffff8;"
+              loading="lazy"></iframe>
+    </figure>
+
+    <p>
+      <span class="newthought">The verifier</span> is the physics referee.
+      For each step of a candidate plan it answers one question:
+      can this block be placed right now, given what is already down?
+      The verifier<label for="sn-chain" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-chain" class="margin-toggle"/><span class="sidenote">Implemented in <code>src/counterplan/verifiers/</code>.</span>
+      is a chain of three cheap physical checks, run cheapest-first so
+      any failure short-circuits:
+    </p>
+
+    <ul>
+      <li><b>Kinematic</b> &mdash; the block must descend into position
+        without intersecting any block already placed (swept polygon
+        test).</li>
+      <li><b>Stability</b> &mdash; the partial structure must stand under
+        gravity, friction, and compression-only contact (LP static
+        equilibrium).</li>
+      <li><b>Landing</b> &mdash; the target slot must actually catch the
+        block; it should not fall past.</li>
+    </ul>
+
+    <p>
+      Each failed check returns a <em>precedence constraint</em> &mdash;
+      a fact of the form &ldquo;A must be placed before B&rdquo;, with the
+      physical reason attached.
+      The stability check, for instance, solves a small LP and reports the
+      <em>minimal support set</em>:
+      the smallest set of still-missing neighbours whose presence would
+      restore equilibrium.
+      Each neighbour in that set becomes one precedence constraint.
+      This is the CEGIS counterexample, made durable<label for="sn-cdcl" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-cdcl" class="margin-toggle"/><span class="sidenote">The same move as CDCL clause learning in modern SAT solvers.</span>:
+      one failed round prunes an exponential slice of future orderings.
+    </p>
+
+    <p>
+      The proposer never touches physics.
+      It needs only the current set of precedence constraints &mdash;
+      in SMT, or the same constraints in English &mdash;
+      and outputs a legal permutation.
+      Whatever proposes that permutation plugs into the same loop.
+    </p>
+
+    <figure>
+      <label for="mn-loop" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-loop" class="margin-toggle"/>
+      <span class="marginnote">
+        The agentic loop. Same skeleton for every proposer in this post
+        &mdash; only the PROPOSER box and the encoding of the feedback
+        arrow change.
+      </span>
+<pre class="code">
+             ┌─────────────────────────┐
+             │   PROPOSER              │
+             │   (random / Z3 / LLM)   │──────► candidate plan
+             └─────────────────────────┘              │
+                          ▲                           ▼
+       precedence clauses │          ┌──────────────────────────────┐
+          (in SMT, prose, │          │   VERIFIER CHAIN             │
+           or tool-result)│          │   kinematic → stability →    │
+                          │          │   landing  (per step k)      │
+                          │          └──────────────────────────────┘
+                          │                           │
+                          │                           ▼
+                          │                    pass? ──► done
+                          │                           │
+                          │                     fail at step k
+                          │                           ▼
+                          │          ┌──────────────────────────────┐
+                          └──────────│  CE GENERALISATION           │
+                                     │  minimal support / blockers  │
+                                     │  → precedence clauses        │
+                                     └──────────────────────────────┘
+</pre>
+    </figure>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>1 &middot; Random proposer &mdash; the baseline</h2>
+
+    <p>
+      <span class="newthought">The simplest proposer</span> is Kahn&rsquo;s
+      topological sort with random tie-breaking &mdash;
+      sample any permutation that respects the precedence constraints
+      learned so far, hand it to the verifier, fold whatever new
+      constraints come back into the next round&rsquo;s pool.
+      If those constraints ever form a cycle, the structure is
+      <em>inherently infeasible</em>.
+      An arch is the canonical case:
+      no voussoir can go in first without a scaffold.
+    </p>
+
+    <p>
+      On <code>pyramid_10</code>, random CEGIS solves the problem in
+      roughly seven rounds, learning about ten precedence constraints
+      along the way.
+      Against a 3.6 &times; 10<sup>6</sup> permutation space that is
+      obviously a win;
+      the question is how much further we can push things by changing
+      only the proposer.
+    </p>
+
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>2 &middot; SMT proposer &mdash; Z3</h2>
+
+    <p>
+      <span class="newthought">The plan is the model.</span>
+      We declare one integer variable per step
+      &mdash; <code>action[k]</code>, the block placed at step
+      <code>k</code>, for <code>k&nbsp;=&nbsp;0..n&minus;1</code> &mdash;
+      and ask Z3 to assign them.
+      Whatever assignment it returns <em>is</em> the plan.
+      No decoder, no post-processing:
+      the solver&rsquo;s model is the artefact we wanted.
+    </p>
+
+    <p>The baseline theory is trivial &mdash; two lines of SMT:</p>
+
+    <p>\[
+      \begin{aligned}
+        &\mathsf{action}[k] \in \mathsf{BlockIds},
+          \quad k = 0, \dots, n-1 \\[2pt]
+        &\mathsf{Distinct}\bigl(\mathsf{action}[0],\,\dots,\,\mathsf{action}[n-1]\bigr)
+      \end{aligned}
+    \]</p>
+
+    <p>
+      Every learned precedence &ldquo;A must precede B&rdquo; becomes one
+      clause, universally quantified over steps<label for="sn-enc" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-enc" class="margin-toggle"/><span class="sidenote">Quantifier-free once unfolded over the fixed <em>n</em>. No triggers, no model-based quantifier instantiation &mdash; it is a plain propositional unfolding that Z3 handles directly.</span>:
+    </p>
+
+    <p>\[
+      \forall\, k.\ \mathsf{action}[k] = B
+      \;\Longrightarrow\;
+      \exists\, k' < k.\ \mathsf{action}[k'] = A
+    \]</p>
+
+    <p>
+      The loop is exactly the diagram above, instantiated for Z3.
+      Z3 returns a model, we read the plan straight off the
+      <code>action[k]</code> variables, the verifier runs, every fresh
+      precedence becomes another clause, and we call
+      <code>check()</code> again.
+      If Z3 ever returns <code>unsat</code>, the structure is
+      <em>provably</em> infeasible &mdash; not &ldquo;we gave up&rdquo;.
+      That proof of impossibility is what the classical route buys you.
+    </p>
+
+    <figure>
+      <label for="mn-z3" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-z3" class="margin-toggle"/>
+      <span class="marginnote">
+        Clauses the verifier fed to Z3 while solving <code>pyramid_10</code>.
+        Each <code>pos(a) &lt; pos(b)</code> says &ldquo;a must come
+        before b&rdquo;.
+      </span>
+      <pre id="z3-clauses" class="code" style="font-size:0.78rem;">loading…</pre>
+    </figure>
+
+    <p>
+      We don&rsquo;t take this step here, but:
+      one could bake the verifier itself into the theory.
+      Stability is an LP; LP is a first-class SMT theory
+      (<code>QF_LRA</code>).
+      Kinematic clearance is a polygon-containment predicate;
+      equality-saturation on the contact graph could give the solver an
+      <em>e-graph</em><label for="sn-egg" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-egg" class="margin-toggle"/><span class="sidenote">Willsey et al., <em>egg: Fast and Extensible Equality Saturation</em> (POPL 2021).</span>
+      of equivalent partial structures so deductions carry across
+      branches.
+      All of it is classical synthesis machinery, and all of it
+      eventually runs out.
+      Without priors, you are always exploring.
+    </p>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>3 &middot; LLM proposer &mdash; via a tool call</h2>
+
+    <p>
+      <span class="newthought">For the LLM route</span> the protocol is
+      agentic.
+      The model sees one tool: <code>submit_plan(plan: list[int])</code>.
+      Each turn it calls the tool with a full permutation of block ids;
+      our code intercepts the call, runs the verifier, and returns the
+      verifier&rsquo;s feedback as the <code>role: tool</code> response.
+      The model then gets another turn with that feedback appended to
+      its context &mdash; no prose conversation history to reconstruct,
+      no JSON parsing to chase, no hallucinated tool names.
+    </p>
+
+    <figure>
+      <label for="mn-tool" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-tool" class="margin-toggle"/>
+      <span class="marginnote">
+        The <code>submit_plan</code> tool, registered once at the start
+        of the conversation and shared every turn.
+        Transport: Fireworks AI&rsquo;s OpenAI-compatible Chat
+        Completions endpoint;
+        <code>deepseek-v3p1</code> for text, <code>kimi-k2p5</code> for
+        vision.
+      </span>
+<pre class="code" style="font-size:0.8rem;">{
+  "type": "function",
+  "function": {
+    "name": "submit_plan",
+    "description": "Submit an assembly plan: the order in which
+      to place the blocks. The physics verifier will check it
+      step by step and reply with pass or the first failing step.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "plan": {"type": "array", "items": {"type": "integer"},
+                 "description": "permutation of every block id"}
+      },
+      "required": ["plan"]
+    }
+  }
+}</pre>
+    </figure>
+
+    <p>
+      One round, transcribed from
+      <a href="web/data/run_llm_basic.json">run_llm_basic.json</a>:
+    </p>
+
+    <figure>
+<pre class="code" style="font-size:0.78rem;">assistant → tool_call:
+  submit_plan(plan=[3, 8, 4, 6, 0, 1, 2, 5, 7, 9])
+
+tool → assistant:
+  REJECTED
+    failed step: 6
+    failing block: 2
+    failing verifier: kinematic
+    reason: block 2 cannot descend — blocked by [5]
+    learned precedence constraints:
+      - place block 2 before block 5
+           (kinematic drop path intersected)
+  Call submit_plan again with a plan that respects these constraints.</pre>
+    </figure>
+
+    <p>
+      The verifier chain is the same Python chain that served Z3 and
+      random.
+      Only the audience of its failure messages changed &mdash; clauses
+      became sentences.
+    </p>
+
+    <p>
+      The text LLM gets two prompts of very different fidelity.
+      The system prompt, the tool, and the verifier are identical in both;
+      only the first user message differs.
+    </p>
+
+    <p><b>Basic prose</b> &mdash; contact graph only, no geometry:</p>
+
+    <figure>
+<pre class="code" style="font-size:0.78rem;">Blocks (id, contact neighbours):
+  id=2 neighbors=[0, 3, 5]
+  id=8 neighbors=[5, 6, 9]
+  id=6 neighbors=[3, 8]
+  id=1 neighbors=[0, 4, 5]
+  … (order scrambled, 10 entries total)
+No coordinates are given, and no information about which block is
+above which. Block ids are arbitrary labels and do NOT imply a
+placement order. Gravity is the only physics rule — you must place
+lower blocks before the blocks resting on them.</pre>
+    </figure>
+
+    <p><b>Geometric prose</b> &mdash; same tool, same system, richer
+      first message:</p>
+
+    <figure>
+<pre class="code" style="font-size:0.78rem;">There are 10 blocks and the ground plane at y=0.0. Gravity points
+down (−y). A block can only descend into its slot straight from above.
+Blocks resting on the ground: [0, 2, 3, 1].
+Blocks with nothing on top of them (exposed upper surface): [9].
+
+Per-block geometry (sorted bottom-to-top, then left-to-right):
+  block 0: centroid=(-2.25,+0.50) size=1.50×1.00  rests on ['ground'];
+           supports blocks above: [4]
+  block 2: centroid=(-0.75,+0.50) size=1.50×1.00  rests on ['ground'];
+           supports blocks above: [4, 5]
+  block 3: centroid=(+0.75,+0.50) size=1.50×1.00  rests on ['ground'];
+           supports blocks above: [5, 6]
+  …</pre>
+    </figure>
+
+    <p>
+      Block ids are permuted before they reach the model<label for="sn-perm" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-perm" class="margin-toggle"/><span class="sidenote">A fixed seed permutation; everything returned by the model is mapped back to real ids before verification. See <code>solve_llm(..., permute_ids=True)</code>.</span>,
+      so neither prompt leaks the placement order via the labels
+      themselves.
+      The only asymmetry between the two prompts is how much spatial
+      information we hand the model up front.
+    </p>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>The comparison</h2>
+
+    <p>
+      Same task (<code>pyramid_10</code>), same verifier, five proposers,
+      one run each.<label for="sn-oneshot" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-oneshot" class="margin-toggle"/><span class="sidenote">A single run per proposer. The LLM calls are mildly stochastic; re-running may shift LLM/VLM lines by a round.</span>
+      The metric is <em>best-so-far block similarity</em>:
+      the fraction of blocks the proposer has ever successfully placed
+      before a verifier failure, tracked as the round counter advances.
+      1.0 means the proposer has found a fully feasible plan.
+      It is the &ldquo;best-so-far vs. trials&rdquo; plot you see in
+      black-box optimisation papers.
+    </p>
+
+    <figure>
+      <label for="mn-chart" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-chart" class="margin-toggle"/>
+      <span class="marginnote">
+        Best-so-far block-placement score vs. proposer round on
+        <code>pyramid_10</code>. Classical proposers (random, Z3) climb
+        step-by-step as the verifier teaches them precedence constraints.
+        The prior-free LLM (basic prose) lands in the same regime as
+        random &mdash; topology alone is not enough. Once the LLM gets
+        coordinates and layout verbs, it one-shots. The VLM gets no text
+        at all and also one-shots.
+      </span>
+      <div id="chart" style="width:100%; max-width:760px; margin:0 auto;"></div>
+    </figure>
+
+    <figure>
+      <label for="mn-bars-rounds" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-bars-rounds" class="margin-toggle"/>
+      <span class="marginnote">
+        Rounds to a fully feasible plan. Lower is fewer proposer / verifier
+        cycles; 1 means one-shot.
+      </span>
+      <div id="bars-rounds" style="width:100%; max-width:760px; margin:0 auto;"></div>
+    </figure>
+
+    <figure>
+      <label for="mn-bars-time" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-bars-time" class="margin-toggle"/>
+      <span class="marginnote">
+        Wall-clock time. Z3 and random are local; LLM / VLM include
+        round-trip latency to Fireworks.
+      </span>
+      <div id="bars-time" style="width:100%; max-width:760px; margin:0 auto;"></div>
+    </figure>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>4 &middot; VLM proposer &mdash; show, don&rsquo;t describe</h2>
+
+    <p>
+      <span class="newthought">Every text prompt</span> in the previous
+      section encoded a choice:
+      centroid vs. vertex list?
+      World-frame or relative?
+      Neighbours as an adjacency list or a graph drawing?
+      Each choice is a guess about what the model needs.
+    </p>
+
+    <p>
+      The visual-language case cuts this.
+      Render the target structure to a labelled PNG &mdash; the picture
+      below &mdash; and hand it over with the same
+      <code>submit_plan</code> tool.
+      The first user message is the image;
+      the blocks carry their permuted ids painted on top.
+      Subsequent turns carry the same verifier-feedback tool responses
+      the text LLM gets.
+    </p>
+
+    <figure>
+      <label for="mn-vlm-in" class="margin-toggle">&#8853;</label>
+      <input type="checkbox" id="mn-vlm-in" class="margin-toggle"/>
+      <span class="marginnote">
+        Exact input fed to <code>kimi-k2p5</code>: the target structure
+        with permuted labels. No accompanying text describes where
+        anything is.
+      </span>
+      <img src="web/data/pyramid_10_vlm_input.png"
+           alt="Exact input image fed to the VLM"
+           style="max-width: 320px; display: block; margin: 0 auto;"/>
+    </figure>
+
+    <p>
+      With <code>kimi-k2p5</code><label for="sn-kimi" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-kimi" class="margin-toggle"/><span class="sidenote">Kimi-K2p5 supports chat, image input, and tool calls &mdash; the three things the loop needs. Fireworks serves it through the OpenAI schema.</span>
+      as the proposer, <code>pyramid_10</code> one-shots:
+      the first tool call is already a feasible plan
+      (<a href="web/data/run_vlm.json">run_vlm.json</a>).
+      The VLM does not need to be told which block sits on the ground
+      &mdash; it can see the ground.
+    </p>
+  </section>
+
+  <hr/>
+
+  <section>
+    <h2>Closing</h2>
+
+    <p>
+      <span class="newthought">The verifier is the load-bearing piece.</span>
+      Once a failure can be distilled into a durable, transferable
+      constraint, CEGIS stops caring who does the proposing.
+      A week of Z3 encoding gets you there.
+      A paragraph of prose handed to a frontier model also gets you there.
+      They are not competing paradigms &mdash;
+      they are two settings of the proposer knob.
+    </p>
+
+    <p>
+      What I find more interesting is the same split one level up:
+      use SMT to <em>design the verifier</em>,
+      and an LLM or VLM to <em>propose the plan</em>.
+      The formal side gets what benefits from proof;
+      the statistical side gets what benefits from priors.
+      Neither has to reach across.
+    </p>
+
+  </section>
+
+  <section class="appendix">
+    <hr/>
+    <p class="subtitle">Artefacts</p>
+    <ul>
+      <li><code>src/counterplan/cegis.py</code> &mdash; loop + random proposer.</li>
+      <li><code>src/counterplan/z3_solver.py</code> &mdash; SMT proposer (action-indexed encoding).</li>
+      <li><code>src/counterplan/llm_solver.py</code> &mdash; text-LLM proposer via <code>submit_plan</code> tool; basic / geometric modes.</li>
+      <li><code>src/counterplan/vlm_solver.py</code> &mdash; VLM proposer (rendered PNG + same tool).</li>
+      <li><code>examples/run_experiments.py</code> &mdash; regenerates
+        <code>web/data/experiments.json</code> &amp;
+        <code>web/data/z3_trace.json</code>.</li>
+      <li><a href="web/"><code>web/</code></a> &mdash; Three.js 3D viewer for individual runs.</li>
+    </ul>
+  </section>
+
+</article>
+
+<!-- Inline data bundle — makes the page work from file:// too (Safari
+     blocks fetch() on file:// origins). Produced by run_experiments.py. -->
+<script src="web/data/data.js"></script>
+<script>
+  // --- Load data: prefer inlined globals, fall back to fetch() ---
+  function getData(urlJson, globalName) {
+    if (window[globalName]) return Promise.resolve(window[globalName]);
+    return fetch(urlJson).then(r => r.ok ? r.json() : null);
+  }
+
+  // --- Z3 clauses panel ---
+  getData('web/data/z3_trace.json', 'Z3_TRACE').then(trace => {
+    const el = document.getElementById('z3-clauses');
+    if (!trace) {
+      el.textContent = 'Run examples/run_experiments.py to populate.';
+      return;
+    }
+    const lines = [];
+    trace.forEach(r => {
+      const cls = r.new_clauses.map(([a, b]) => `pos(${a}) < pos(${b})`).join('; ');
+      lines.push(`round ${r.round_num}:  plan=${JSON.stringify(r.proposed_plan)}`);
+      if (cls) lines.push(`           learned:  ${cls}`);
+    });
+    el.textContent = lines.join('\n');
+  });
+
+  // --- Comparison chart (plain SVG, no deps) ---
+  getData('web/data/experiments.json', 'EXPERIMENTS')
+    .then(data => {
+      drawChart(data);
+      drawBars('bars-rounds', data, r => r.n_rounds,
+               v => `${v} round${v === 1 ? '' : 's'}`,
+               'rounds to feasible plan');
+      drawBars('bars-time', data, r => r.seconds,
+               v => `${v.toFixed(1)}s`,
+               'wall-clock time (s)');
+    })
+    .catch(e => { document.getElementById('chart').textContent = e.message; });
+
+  function drawBars(containerId, data, valueFn, fmt, axisLabel) {
+    const runs = data.runs.filter(r => !r.skipped && valueFn(r) != null);
+    const skipped = data.runs.filter(r => r.skipped);
+    if (runs.length === 0) return;
+
+    const rowH = 28, gap = 8;
+    const W = 760, padL = 170, padR = 90, padT = 14, padB = 36;
+    const H = padT + padB + runs.length * (rowH + gap);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('style', 'width:100%; height:auto; font-family: et-book, Georgia, serif;');
+
+    const maxV = Math.max(...runs.map(valueFn));
+    const x0 = padL, x1 = W - padR;
+    const xs = (v) => x0 + (v / maxV) * (x1 - x0);
+
+    // axis line
+    const ax = document.createElementNS(svgNS, 'line');
+    ax.setAttribute('x1', x0); ax.setAttribute('x2', x1);
+    ax.setAttribute('y1', H - padB); ax.setAttribute('y2', H - padB);
+    ax.setAttribute('stroke', '#999');
+    svg.appendChild(ax);
+
+    // x ticks (4 evenly-spaced)
+    for (let t = 0; t <= 4; ++t) {
+      const v = (maxV * t) / 4;
+      const x = xs(v);
+      const tk = document.createElementNS(svgNS, 'line');
+      tk.setAttribute('x1', x); tk.setAttribute('x2', x);
+      tk.setAttribute('y1', padT); tk.setAttribute('y2', H - padB);
+      tk.setAttribute('stroke', '#eee');
+      svg.insertBefore(tk, svg.firstChild);
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', x); lab.setAttribute('y', H - padB + 14);
+      lab.setAttribute('text-anchor', 'middle'); lab.setAttribute('font-size', 11);
+      lab.setAttribute('fill', '#6b7280');
+      lab.textContent = Number.isInteger(v) ? v : v.toFixed(1);
+      svg.appendChild(lab);
+    }
+
+    const xlab = document.createElementNS(svgNS, 'text');
+    xlab.setAttribute('x', (x0 + x1) / 2); xlab.setAttribute('y', H - 4);
+    xlab.setAttribute('text-anchor', 'middle'); xlab.setAttribute('font-size', 12);
+    xlab.setAttribute('fill', '#6b7280');
+    xlab.textContent = axisLabel;
+    svg.appendChild(xlab);
+
+    runs.forEach((run, i) => {
+      const v = valueFn(run);
+      const y = padT + i * (rowH + gap);
+      const lbl = document.createElementNS(svgNS, 'text');
+      lbl.setAttribute('x', x0 - 10); lbl.setAttribute('y', y + rowH / 2 + 4);
+      lbl.setAttribute('text-anchor', 'end'); lbl.setAttribute('font-size', 12);
+      lbl.setAttribute('fill', '#111');
+      lbl.textContent = run.label;
+      svg.appendChild(lbl);
+
+      const bar = document.createElementNS(svgNS, 'rect');
+      bar.setAttribute('x', x0); bar.setAttribute('y', y);
+      bar.setAttribute('width', xs(v) - x0);
+      bar.setAttribute('height', rowH);
+      bar.setAttribute('fill', run.color || '#111');
+      svg.appendChild(bar);
+
+      const val = document.createElementNS(svgNS, 'text');
+      val.setAttribute('x', xs(v) + 6); val.setAttribute('y', y + rowH / 2 + 4);
+      val.setAttribute('font-size', 12); val.setAttribute('fill', '#111');
+      val.textContent = fmt(v);
+      svg.appendChild(val);
+    });
+
+    // skipped runs as greyed labels (no bar)
+    skipped.forEach((run, j) => {
+      const y = padT + (runs.length + j) * (rowH + gap);
+      const lbl = document.createElementNS(svgNS, 'text');
+      lbl.setAttribute('x', x0 - 10); lbl.setAttribute('y', y + rowH / 2 + 4);
+      lbl.setAttribute('text-anchor', 'end'); lbl.setAttribute('font-size', 12);
+      lbl.setAttribute('fill', '#9ca3af');
+      lbl.textContent = run.label;
+      svg.appendChild(lbl);
+      const note = document.createElementNS(svgNS, 'text');
+      note.setAttribute('x', x0 + 4); note.setAttribute('y', y + rowH / 2 + 4);
+      note.setAttribute('font-size', 12); note.setAttribute('fill', '#9ca3af');
+      note.textContent = `(${run.skipped})`;
+      svg.appendChild(note);
+    });
+
+    document.getElementById(containerId).appendChild(svg);
+  }
+
+  function drawChart(data) {
+    const runs = data.runs.filter(r => !r.skipped);
+    const skipped = data.runs.filter(r => r.skipped);
+    const legendRows = runs.length + skipped.length;
+    const W = 760, H = 360 + 30 + legendRows * 18,
+          pad = {l: 58, r: 24, t: 16, b: 76 + legendRows * 18};
+    // x = 0 is the empty-baseline (no proposer attempt yet, score = 0).
+    // The k-th proposer attempt is plotted at x = k.
+    const maxRounds = Math.max(...runs.map(r => r.score_per_round.length), 8) + 1;
+    const ns = document.getElementById('chart');
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('style', 'width:100%; height:auto; font-family: et-book, Georgia, serif;');
+
+    const xs = (i) => pad.l + (i / (maxRounds - 1)) * (W - pad.l - pad.r);
+    const ys = (v) => pad.t + (1 - v) * (H - pad.t - pad.b);
+
+    // axes
+    const ax = (d) => {
+      const p = document.createElementNS(svgNS, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('stroke', '#999'); p.setAttribute('fill', 'none');
+      svg.appendChild(p);
+    };
+    ax(`M${pad.l} ${pad.t} L${pad.l} ${H - pad.b} L${W - pad.r} ${H - pad.b}`);
+
+    [0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
+      const y = ys(v);
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', pad.l - 8); t.setAttribute('y', y + 4);
+      t.setAttribute('text-anchor', 'end'); t.setAttribute('font-size', 11);
+      t.setAttribute('fill', '#6b7280'); t.textContent = v.toFixed(2);
+      svg.appendChild(t);
+      const g = document.createElementNS(svgNS, 'line');
+      g.setAttribute('x1', pad.l); g.setAttribute('x2', W - pad.r);
+      g.setAttribute('y1', y); g.setAttribute('y2', y);
+      g.setAttribute('stroke', '#eee');
+      svg.insertBefore(g, svg.firstChild);
+    });
+    // x ticks
+    for (let i = 0; i < maxRounds; ++i) {
+      const x = xs(i);
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', x); t.setAttribute('y', H - pad.b + 16);
+      t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 11);
+      t.setAttribute('fill', '#6b7280'); t.textContent = i;
+      svg.appendChild(t);
+    }
+
+    const xlab = document.createElementNS(svgNS, 'text');
+    xlab.setAttribute('x', W / 2);
+    xlab.setAttribute('y', H - pad.b + 38);
+    xlab.setAttribute('text-anchor', 'middle'); xlab.setAttribute('font-size', 12);
+    xlab.setAttribute('fill', '#6b7280');
+    xlab.textContent = 'proposer round';
+    svg.appendChild(xlab);
+
+    const plotMidY = pad.t + (H - pad.t - pad.b) / 2;
+    const ylab = document.createElementNS(svgNS, 'text');
+    ylab.setAttribute('x', 14); ylab.setAttribute('y', plotMidY);
+    ylab.setAttribute('text-anchor', 'middle'); ylab.setAttribute('font-size', 12);
+    ylab.setAttribute('fill', '#6b7280');
+    ylab.setAttribute('transform', `rotate(-90 14 ${plotMidY})`);
+    ylab.textContent = 'best-so-far block similarity';
+    svg.appendChild(ylab);
+
+    const legendTop = H - pad.b + 64;
+    const legendLeft = pad.l;
+
+    runs.forEach((run, idx) => {
+      const color = run.color || '#111';
+      const s = run.score_per_round;
+      if (!s || s.length === 0) return;
+
+      // Step-after staircase from the (0, 0) baseline: hold the previous
+      // value horizontally, jump vertically at the next round.
+      const pts = [`${xs(0)},${ys(0)}`];
+      let prev = 0;
+      s.forEach((v, i) => {
+        const x = xs(i + 1);
+        pts.push(`${x},${ys(prev)}`);
+        pts.push(`${x},${ys(v)}`);
+        prev = v;
+      });
+      const last = s[s.length - 1];
+      if (last >= 1.0 && s.length + 1 < maxRounds) {
+        pts.push(`${xs(maxRounds - 1)},${ys(last)}`);
+      }
+      const poly = document.createElementNS(svgNS, 'polyline');
+      poly.setAttribute('points', pts.join(' '));
+      poly.setAttribute('fill', 'none');
+      poly.setAttribute('stroke', color);
+      poly.setAttribute('stroke-width', 2.5);
+      poly.setAttribute('stroke-linejoin', 'miter');
+      svg.appendChild(poly);
+
+      s.forEach((v, i) => {
+        const c = document.createElementNS(svgNS, 'circle');
+        c.setAttribute('cx', xs(i + 1)); c.setAttribute('cy', ys(v));
+        c.setAttribute('r', 3.5);
+        c.setAttribute('fill', color);
+        svg.appendChild(c);
+      });
+
+      const ly = legendTop + idx * 18;
+      const sw = document.createElementNS(svgNS, 'rect');
+      sw.setAttribute('x', legendLeft); sw.setAttribute('y', ly - 8);
+      sw.setAttribute('width', 14); sw.setAttribute('height', 3);
+      sw.setAttribute('fill', color);
+      svg.appendChild(sw);
+      const tx = document.createElementNS(svgNS, 'text');
+      tx.setAttribute('x', legendLeft + 20); tx.setAttribute('y', ly - 3);
+      tx.setAttribute('font-size', 12); tx.setAttribute('fill', '#111');
+      tx.textContent =
+        `${run.label} — ${run.n_rounds} round${run.n_rounds === 1 ? '' : 's'}, ${run.seconds.toFixed(1)}s`;
+      svg.appendChild(tx);
+    });
+
+    skipped.forEach((run, i) => {
+      const ly = legendTop + (runs.length + i) * 18;
+      const tx = document.createElementNS(svgNS, 'text');
+      tx.setAttribute('x', legendLeft + 20); tx.setAttribute('y', ly - 3);
+      tx.setAttribute('font-size', 12); tx.setAttribute('fill', '#9ca3af');
+      tx.textContent = `${run.label} — (${run.skipped})`;
+      svg.appendChild(tx);
+    });
+
+    ns.appendChild(svg);
+  }
+</script>
+
+</body>
+</html>

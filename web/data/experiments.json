@@ -1,0 +1,138 @@
+{
+  "benchmark": "pyramid_10",
+  "n_blocks": 10,
+  "runs": [
+    {
+      "label": "Random CEGIS",
+      "color": "#9ca3af",
+      "feasible": true,
+      "n_rounds": 7,
+      "seconds": 0.11569714546203613,
+      "score_per_round": [
+        0.2,
+        0.7,
+        0.7,
+        0.7,
+        0.7,
+        0.7,
+        1.0
+      ],
+      "final_plan": [
+        2,
+        3,
+        1,
+        6,
+        5,
+        8,
+        0,
+        4,
+        7,
+        9
+      ]
+    },
+    {
+      "label": "Z3 (SMT) CEGIS",
+      "color": "#4e79a7",
+      "feasible": true,
+      "n_rounds": 6,
+      "seconds": 0.14131832122802734,
+      "score_per_round": [
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        1.0
+      ],
+      "final_plan": [
+        1,
+        3,
+        0,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "label": "LLM (basic prose)",
+      "color": "#f4a261",
+      "feasible": true,
+      "n_rounds": 6,
+      "seconds": 16.622490882873535,
+      "score_per_round": [
+        0.0,
+        0.0,
+        0.6,
+        0.9,
+        0.9,
+        1.0
+      ],
+      "final_plan": [
+        0,
+        2,
+        3,
+        1,
+        5,
+        4,
+        6,
+        7,
+        8,
+        9
+      ],
+      "trace_file": "data/run_llm_basic.json",
+      "model": "accounts/fireworks/models/deepseek-v3p1"
+    },
+    {
+      "label": "LLM (geometric prose)",
+      "color": "#59a14f",
+      "feasible": true,
+      "n_rounds": 1,
+      "seconds": 3.4748899936676025,
+      "score_per_round": [
+        1.0
+      ],
+      "final_plan": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "trace_file": "data/run_llm_geom.json",
+      "model": "accounts/fireworks/models/deepseek-v3p1"
+    },
+    {
+      "label": "VLM (image + tool)",
+      "color": "#e15759",
+      "feasible": true,
+      "n_rounds": 1,
+      "seconds": 9.659348011016846,
+      "score_per_round": [
+        1.0
+      ],
+      "final_plan": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "trace_file": "data/run_vlm.json",
+      "model": "accounts/fireworks/models/kimi-k2p5"
+    }
+  ]
+}

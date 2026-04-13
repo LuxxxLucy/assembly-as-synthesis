@@ -1,0 +1,36 @@
+/* Force light mode everywhere — tufte.css ships auto dark-mode in newer
+   builds, and we want the page to look identical to the reference blog
+   regardless of the user's OS setting. */
+:root { color-scheme: light only; }
+html, body { background-color: #fffff8 !important; color: #111 !important; }
+@media (prefers-color-scheme: dark) {
+  html, body, article { background-color: #fffff8 !important; color: #111 !important; }
+  pre, code { background-color: #f7f7f0 !important; color: #111 !important; }
+  a { color: #0645ad !important; }
+  blockquote, .sidenote, .marginnote { color: #444 !important; }
+}
+
+article { padding: 1rem 0; padding-left: 5%; margin-left: 1rem; }
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+code { font-family: 'JetBrains Mono', 'Menlo', monospace; }
+
+pre.code {
+  font-family: 'JetBrains Mono', 'Menlo', monospace;
+  font-size: 0.82rem;
+  background: #f7f7f0;
+  border: 1px solid #e7e6df;
+  border-radius: 4px;
+  padding: 0.7rem 1rem;
+  overflow-x: auto;
+}
+
+ul li { margin: 0.25rem 0; }
+
+.appendix { font-size: 0.9rem; }
+
+hr {
+  border: 0;
+  border-top: 1px solid #d8d6cc;
+  margin: 2rem 0;
+}

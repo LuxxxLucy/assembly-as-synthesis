@@ -14,3 +14,6 @@ __pycache__/
 *.pyc
 .venv/
 output/
+
+# Blog assets — needed for static serving of index.html.
+!web/data/*.png

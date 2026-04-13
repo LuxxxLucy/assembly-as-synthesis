@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>counterplan — embed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Pull only the palette from the main stylesheet; the layout below
+       deliberately overrides everything about the structure-panel grid. -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    /* Match Tufte CSS page background so the embed disappears into the blog. */
+    body { background: #fffff8; font-family: Inter, sans-serif; }
+
+    /* Two equal cells. The two canvas mounts are direct grid children, so
+       they share exactly the same computed width and height. */
+    #viewer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      height: 100vh;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    #three-canvas, #preview-canvas {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid #e6e2d2;
+      border-radius: 4px;
+      background: #fffff8;
+      overflow: hidden;
+    }
+    /* app.js injects a <canvas> into each mount; stretch it. */
+    #three-canvas canvas, #preview-canvas canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* DOM nodes app.js references but we don't want to show. */
+    #hidden-chrome { position: absolute; left: -99999px; top: -99999px;
+                     width: 1px; height: 1px; overflow: hidden; }
+
+    .embed-link {
+      position: fixed; right: 14px; bottom: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: #6b7280;
+      background: rgba(255,255,248,0.9);
+      padding: 4px 8px; border-radius: 4px;
+      border: 1px solid #d8d6cc;
+      text-decoration: none;
+    }
+    .embed-link:hover { color: #111; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <div id="viewer-grid">
+    <div id="three-canvas"></div>
+    <div id="preview-canvas"></div>
+  </div>
+
+  <!-- app.js references these nodes at load time; keep them in the DOM
+       off-screen so it doesn't null-crash. -->
+  <div id="hidden-chrome">
+    <span id="status-text"></span>
+    <h2 id="round-label"></h2>
+    <div id="sequence-display"></div>
+    <div id="constraints-list"></div>
+    <div id="result-display"></div>
+    <div id="timeline-bar"><div id="timeline-progress"></div></div>
+    <span id="frame-counter"></span>
+    <button id="btn-prev"></button>
+    <button id="btn-play"></button>
+    <button id="btn-next"></button>
+    <select id="trace-select">
+      <option value="pyramid_10_blog" selected>Pyramid 10 (blog demo)</option>
+      <option value="pyramid_10">Pyramid 10 (full CEGIS run)</option>
+    </select>
+  </div>
+
+  <a class="embed-link" href="index.html" target="_top">full viewer →</a>
+
+  <script src="data/traces.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
