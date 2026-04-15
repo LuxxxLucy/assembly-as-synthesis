@@ -46,7 +46,7 @@
       <input type="checkbox" id="sn-cegis-hint" class="margin-toggle"/>
       <span class="sidenote">where it is more formally called counterexample-guided synthesis (CEGIS). Will be introduced later.</span>
       we show both the old fashioned program synthesis approaches,
-      and then the more modern neueral approaches using large language and vision models.
+      as well as the more modern neural approaches using large language and vision models.
     </p>
     <p>
       The two approaches sit at opposite ends of the spectrum, and each's strength is also precisely its inherent weakness. Symbolic synthesis encodes the problem elegantly, runs efficiently, but it does not has a good prior nor common sense baked in about the physical world. Meanwhile neural synthesis offers only stochastic results, yet it absorbs rich priors about the world we live in.<label for="sn-carbon" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-carbon" class="margin-toggle"/><span class="sidenote">Those priors, of course, do not come for free: training and serving such models carries a considerable carbon footprint.</span>
@@ -64,18 +64,18 @@
     <p>
     In an extremely simplified way, building a wall (a pyramid, an arch, etc) is really about figureing out a sequence of primitive actions: place this block here, and then that one there. Reality requires the assembly plan to be <em>valid</em> and <em>feasible</em>, in the sense that the assembly process needs to satisfy the law of gravity, partially-built object needs to be stable<label for="sn-scaffold" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-scaffold" class="margin-toggle"/>
-      <span class="sidenote">Otherwise some kind of scaffolding is needed; let us we not discuss the other consideratoons for assembly nor scaffolding in this simplified world.</span>, etc.
+      <span class="sidenote">Otherwise some kind of scaffolding is needed; let us not discuss other considerations for assembly or scaffolding in this simplified world.</span>, etc.
     </p>
 
     <p>
-      It is therefore natural to think assembly planning as a program synthesis problem. To keep everything simple, let us assume we have a simplified world, where we want to build a target structure that consists of blocks. We also defines a set of rules in this toy world as follows:
+      It is therefore natural to think assembly planning as a program synthesis problem. To keep everything simple, let us assume we have a simplified world, where we want to build a target structure that consists of blocks. We also define a set of rules in this toy world as follows:
     </p>
 
     <ul>
       <li>In this world we have a gravity that drags things down to ground.</li>
       <li>We say we only have a stupid robot for the assembly that can only place a block from top down and cannot temporarily move other blocks. And so the placement of new blocks should not have any collisions with the current blocks.</li>
       <li>Partial structures should remain stable, otherwise the structure would collapse.</li>
-      <li>The goal is to have a assembly plan that the robot can put a block one at a time to construct the targeted design.
+      <li>The goal is to produce an assembly plan under which the robot places blocks one at a time to construct the target design.
     </ul>
 
     <figure id="task-viewer">
@@ -92,11 +92,12 @@
               loading="lazy"></iframe>
     </figure>
     <p>
-        <label for="mn-program" class="margin-toggle">&#8853;</label>
-        <input type="checkbox" id="mn-program" class="margin-toggle"/>
-        <span class="marginnote">
-            A actual program might look like this:
-          <span style="display:block; white-space:pre; font-family:'JetBrains Mono','Menlo',monospace; font-size:0.70rem; line-height:1.35; margin-bottom:0.5em;">&lt;program&gt;
+        This should be a simple setting for us to start with.
+        And by this point it shall be apparent to the readers that this is a trivial task, and indeed it is intentionally designed to be so. To make it more explicit, such an assembly plan might be described as a procedural routine.<label for="sn-program" class="margin-toggle sidenote-number"></label>
+        <input type="checkbox" id="sn-program" class="margin-toggle"/>
+        <span class="sidenote">
+            An actual program might look like this:
+          <span style="display:block; white-space:pre; font-family:'JetBrains Mono','Menlo',monospace; font-size:0.70rem; line-height:1.35; margin-top:0.5em;">&lt;program&gt;
   &lt;action&gt; place block id=1 &lt;/action&gt;
   &lt;action&gt; place block id=3 &lt;/action&gt;
   &lt;action&gt; place block id=0 &lt;/action&gt;
@@ -111,11 +112,6 @@
           Or with some syntax sugar, we can write it simply as <code>plan([1, 3, 0, 2, 4, 5, 7, 6, 8, 9])</code>.
         </span>
     </p>
-
-    <p>
-        This should be a simple setting for us to start with.
-        And by this point it shall be apparent to the readers that this is a trivial task, and indeed it is intentionally designed to be so. To make it more explicit, such an assembly plan might be described as a procedural routine.
-    </p>
   </section>
 
   <section>
@@ -123,7 +119,7 @@
 
     <p>
       Ultimately every problem-solving in the end is simply try-and-learn, nor is ours an exception.
-      Unless some oracle or good heuristic is provided, a problem sovler will try, fail, learn from the feedback and then try again.
+      Unless some oracle or good heuristics are provided, a problem solver will try, fail, learn from the feedback and then try again.
 
     </p>
 
@@ -145,18 +141,16 @@
     <p>
       In order to let the agent learn from the
       feedback and then use it to guide its decision next time,
-      the try-and-learn agent only needs one cirtical component: memory.
-      We supplement the agent with a memory, we stored the lessions we learned from the feedback in the memory, and the memory can guide it make better decisions in the future.
+      the try-and-learn agent only needs one critical component: memory.
+      We supplement the agent with a memory: we store the lessons we learned from feedback there, and the memory guides it to make better decisions in the future.
       It is a simple (and natural) idea, but it is still a very vague idea, as we do not really properly define what is a lesson and what is this memory, nor do we know how we can define and mechanically compute on it.
     </p>
 
     <p>
-      In order to make it computable,
-      when we define the lesson learned as logical clauses, and that the memory as a concatenation of all the learned clauses combined, we now have <em>counterexample-guided inductive synthesis</em> (CEGIS).<label for="sn-cegis" class="margin-toggle sidenote-number"></label>
+      To make it computable: if we define the lesson as a logical clause and the memory as the conjunction of all learned clauses, we now have <em>counterexample-guided inductive synthesis</em> (CEGIS).<label for="sn-cegis" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-cegis" class="margin-toggle"/>
       <span class="sidenote">Armando Solar-Lezama, <em>Program synthesis by Sketching</em>, PhD thesis 2008. Though similar ideas are already present in earlier literature.</span>
-      In this post I will swap five different agents into the same loop.
-      The loop with one twist: the environment does more than score.
+      In this post I will swap five different agent implementations, but with the same loop structure.
       In each round, the agent learns the failure and turns into memory, and it becomes a rule that the next round has to respect.
     </p>
 
@@ -173,7 +167,7 @@
       The lessons learned in this environment are a precedence clause, <em>A must be placed before B</em> — in our running example, <em>block 6 must be placed before block 8</em>.<label for="sn-chain" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-chain" class="margin-toggle"/>
       <span class="sidenote">
-        The environment decides pass or fail, and on fail it explains why. Concretely we run a chain of three cheap physics checks: <b>kinematic</b> (can the block descend into its slot without intersecting anything already placed?), <b>stability</b> (does the partial structure stand under gravity, friction, and compression-only contact? an LP equilibrium test), <b>landing</b> (does the target slot actually catch the block?). Code in <code>src/counterplan/verifiers/</code>.
+        The environment decides pass or fail, and on fail it explains why. Concretely we run a chain of three cheap physics checks: <b>kinematic</b> (can the block descend into its slot without intersecting anything already placed?), <b>stability</b> (does the partial structure stand under gravity, friction, and compression-only contact? an LP equilibrium test), <b>landing</b> (does the block actually reach the target slot/position?). Code in <code>src/counterplan/verifiers/</code>.
       </span>
       This precedence clause is what the agent commits to memory.<label for="sn-cdcl" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-cdcl" class="margin-toggle"/>
@@ -187,12 +181,12 @@
     <h2>A simple agent: random search with learned dependencies</h2>
 
     <p>
-      Here we start with a simplest agent possible: it proposes new actions (which block to place) randomly,
-      hands it to the verifier, and learn from whatever the precedence clauses come back into memory.
+      Here we start with the simplest agent possible: it proposes new actions (which block to place) randomly,
+      hands them to the verifier, and commits whatever precedence clauses come back into memory.
     </p>
 
     <p>
-      For example, the following traces shows that in the first round, the agent continue proposing new actions, let the enviroment verify, and then when it failed, it learns a precedence clause, a lesson.
+      For example, the following trace shows that in the first round the agent continues proposing new actions, lets the environment verify, and when it fails, learns a precedence clause — a lesson.
     </p>
 
     <figure>
@@ -214,7 +208,7 @@
     </figure>
 
     <p>
-      The clause <em>6 before 8</em> is returned by the enviroment the verifier when block 6's descent path is blocked by block 8. The loop writes that one line into memory (concretely, a list of <code>(a, b)</code> pairs kept next to the agent). On the next round the agent filters its random proposals to those consistent with memory clauses, so the same mistake will not happen again.
+      The clause <em>6 before 8</em> is returned by the environment (the verifier) when block 6's descent path is blocked by block 8. The loop writes that one line into memory (concretely, a list of <code>(a, b)</code> pairs kept next to the agent). On the next round the agent filters its random proposals to those consistent with memory clauses, so the same mistake will not happen again.
     </p>
 
     <p>
@@ -225,7 +219,7 @@
       <label for="mn-try2" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-try2" class="margin-toggle"/>
       <span class="marginnote">
-        TRY 2: It finds a feasible plan. In fact the random agent typically converges in 3 to 7 rounds, depends on the random seed. I call it 2nd TRY just as demonstration.
+        TRY 2: It finds a feasible plan. In fact the random agent typically converges in 3 to 7 rounds, depending on the random seed. I label this one as the 2nd TRY just for demonstration.
       </span>
 <pre class="code" style="font-size:0.78rem;">TRY 2: memory = { 6 before 8 }
   place 1 -&gt; OK
@@ -242,7 +236,7 @@
     </figure>
 
     <p>
-      That is CEGIS in simplest form. The rest of the post swaps the implementation of the agent, essentially how the lesson and memory is represented (Z3, LLMs, VLMs). The general loop stays the same.
+      That is CEGIS in its simplest form. The rest of the post swaps the implementation of the agent — essentially how the lesson and memory are represented (Z3, LLMs, VLMs). The general loop stays the same.
     </p>
   </section>
 
@@ -252,7 +246,7 @@
     <h2>Symbolic synthesis: Sketch and the SMT route</h2>
 
     <p>
-      A more formal and old-school symbolic approach would formulate the problem, and the lessons all as symbolic objects of constraints, i.e. as a set of logical constraints and hands them to a backend incremental SMT solver.<label for="sn-smt" class="margin-toggle sidenote-number"></label>
+      A more formal, old-school symbolic approach would formulate both the problem and the lessons as a set of logical constraints, and hand them to a backend incremental SMT solver.<label for="sn-smt" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-smt" class="margin-toggle"/>
       <span class="sidenote">SMT stands for <em>satisfiability modulo theories</em>. Think of it as SAT plus a pluggable theory (integers, linear real arithmetic, arrays) so you can write math-like statements and the solver reasons about them. Z3 is the canonical tool maintained by Microsoft.</span>
       Let \(P\) be a candidate program and \(\varphi\) the specification. A verifier \(V(P)\) returns either <em>pass</em> or a counterexample \(c\) witnessing \(\neg\varphi(P)\). CEGIS maintains a constraint set \(\Phi\) that grows with each \(c\):
@@ -348,7 +342,7 @@ while solver.check() == sat:
     </figure>
 
     <p>
-      Whatever the assembly plan the Z3 returns <em>is</em> is a feasible plan. If Z3 returns <code>unsat</code>, the structure is <em>provably</em> infeasible, which is the good thing about it. On <code>pyramid_10</code>, Z3 converges in six rounds.
+      Whatever assembly plan Z3 returns is, by construction, a feasible one. If Z3 returns <code>unsat</code>, the structure is <em>provably</em> infeasible — which is the really good thing about it. On <code>pyramid_10</code>, Z3 converges in six rounds.
     </p>
 
     <figure>
@@ -361,9 +355,9 @@ while solver.check() == sat:
     </figure>
 
     <p>
-      Note that in fact this is only a simple version. SMT also provides ways to write custom <em>theories</em> so that stability equivilence can be incorporated to further improve the search.<label for="sn-smt-more" class="margin-toggle sidenote-number"></label>
+      Note that in fact this is only a simple version. SMT also provides ways to write custom <em>theories</em> so that stability equivalence can be incorporated to further improve the search.<label for="sn-smt-more" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-smt-more" class="margin-toggle"/>
-      <span class="sidenote">Meanwhile, it might appears that our sequence encoding repeats a lot of work because many orderings actions might produce the same partial structures. But Z3 internally have an <em>e-graph</em> (Tate et al., <em>Equality Saturation: A New Approach to Optimization</em>, 2010) that could compress equivalent partial structures so we in fact have the search space nicely pruned.</span>
+      <span class="sidenote">Meanwhile, it might appear that our sequence encoding repeats a lot of work, because many action orderings produce the same partial structures. But Z3 internally has an <em>e-graph</em> (Tate et al., <em>Equality Saturation: A New Approach to Optimization</em>, 2010) that compresses equivalent partial structures, so the search space is in fact nicely pruned.</span>
     </p>
   </section>
 
@@ -373,29 +367,29 @@ while solver.check() == sat:
     <h2>What does the solver actually know?</h2>
 
     <p>
-      Bear with me if you follow here to me. Z3/SMT is a huge bulk of work, even though it backs a lot of critical tasks in this world, it is still not quite accessible and easy to follow or use.<label for="sn-smt-aside" class="margin-toggle sidenote-number"></label>
+      Bear with me here. Z3/SMT is a huge body of work and backs a lot of critical tasks in this world, but it remains not quite accessible nor easy to follow or use.<label for="sn-smt-aside" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-smt-aside" class="margin-toggle"/>
       <span class="sidenote">
-        So is most of the old-fashioned literature: the more you dig in, the more it becomes entangled with logic, programming language research, type theory, constraints, and proofs. I still remember trying a course on logic during my masters at SFU with <a href="https://www.cs.sfu.ca/~ter/my_web_page/Welcome.html">Evgenia Ternovska</a>, which make me realize that I am not that kind of material. I barely past it.
+        So is most of the old-fashioned literature: the more you dig in, the more it becomes entangled with logic, programming language research, type theory, constraints, and proofs. I still remember trying a course on logic during my masters at SFU with <a href="https://www.cs.sfu.ca/~ter/my_web_page/Welcome.html">Evgenia Ternovska</a>, which made me realize that I am not that kind of material. I barely passed it.
       </span>
       However, I want to assure you that the following sections will not be like it, as we are now walking into the territory of deep learning. And indeed, things have changed considerably.
     </p>
 
     <p>
-      Even though we have those fancy tools and solvers, we still have one major questions: if this is a physical task, human could very quickly solve it by one round, as we understand for such a trivial task and design target, we just place the lower blocks first and then the upper ones. Why is it difficult that these solvers would needs multiple rounds of try-and-learn?
+      Even though we have those fancy tools and solvers, one major question remains: if this is a physical task, a human can solve it in a single round — we understand that for such a trivial target, you just place the lower blocks first and then the upper ones. Why do these solvers need multiple rounds of try-and-learn?
     </p>
 
     <p>
-      The reason is simply that the solvers we present so far does not really understand the physical world. The simple random agent and Z3 both produced feasible plans, but neither knew a thing about gravity, support, or blocks. All either agent ever saw was integer ids and inequalities like <code>pos(6) &lt; pos(8)</code>. The story about <em>why</em> 6 must come before 8 (block 8 sits above block 6, its descent path is blocked) lives entirely in an abstract space like a blackbox.
+      The reason is simply that the solvers we have presented so far do not really understand the physical world. The simple random agent and Z3 both produced feasible plans, but neither knew a thing about gravity, support, or blocks. All either agent ever saw was integer ids and inequalities like <code>pos(6) &lt; pos(8)</code>. The story about <em>why</em> 6 must come before 8 (block 8 sits above block 6, its descent path is blocked) lives entirely in an abstract space like a blackbox.
     </p>
 
     <p>
-      In fact, we can do a extreme though experiment here, we can switch to a new task of making omelettes, and we can find out that this new task have the exact same problem encoding:
+      In fact, we can run an extreme thought experiment: switch to a new task of making omelettes, and we find that this new task has the exact same problem encoding:
       Say you are writing a recipe: <em>whisk before folding, preheat before baking, chop before sautéing</em>. Transcribe those constraints in the same <code>pos(a) &lt; pos(b)</code> form and ask Z3 for a linear order. From Z3's point of view, making pyramids and making omelettes are indistinguishable.
     </p>
 
     <p>
-      That is the beauty and the curse of such symbolic approaches. The encoding is where the labor of abstraction is done: a human manually convert the problem into an encoding/formulation, and the solver sees nothing beyond it. The solver focus on and only on this abstract symbolic formulation so that it can solve it efficiently. However, this is also what prevent it from obtaining trivial solutions as it does not have any knowledge about gravity, supports, etc.
+      That is the beauty and the curse of such symbolic approaches. The encoding is where the labor of abstraction is done: a human manually converts/encodes the problem into a formulation, and the solver sees nothing beyond it. The solver focuses on — and only on — this abstract symbolic formulation, so that it can solve it efficiently. But this is also what prevents it from obtaining the obvious solutions a human would find, since it has no knowledge of gravity, supports, etc.
     </p>
   </section>
 
@@ -405,13 +399,11 @@ while solver.check() == sat:
     <h2>Neural synthesis: LLM and VLM agents</h2>
 
     <p>
-      The symbolic route runs on abstract encodings and ignores the world. The neural approach does the opposite.
-      In the opposite, it is grounded with physical knowledge.
-      A language or vision language model has already read a lot of human writing or images about pyramids, arches, scaffolds, gravity, load-bearing and in general much richer knowledge. So we just hand it the task and often it returns a working plan on the first try; when it does not, the same verifier rejects the model's plan just as it rejected Z3's, only now the rejection can be directly used and appended to the memory as plain English.
+      The symbolic route runs on abstract encodings and ignores the world. The neural approach does the opposite: it is grounded in physical knowledge. A language or vision-language model has already read a lot of human writing and images about pyramids, arches, scaffolds, gravity, load-bearing — and much richer world knowledge in general. So we just hand it the task and it often returns a working plan on the first try; when it does not, the same verifier rejects the model's plan just as it rejected Z3's, only now the rejection can be appended to the memory as plain English.
     </p>
 
     <p>
-      Let us begin with using a LLM to solve it. For the target structure, we can trivially describe it in plain text: model coordinates, sizes, and support relationships. Below is a prompt that we use to feed into a LLM:
+      Let us begin by using an LLM to solve it. For the target structure, we can describe it in plain text: coordinates, sizes, and support relationships. Below is a prompt that we use to feed into an LLM:
     </p>
 
     <blockquote>
@@ -426,7 +418,7 @@ while solver.check() == sat:
 
     <p>
       The model replies through a tool call, <code>submit_plan(plan: list[int])</code>.
-      The verifier chain underneath is the same Python code; only the audience of its failure messages has shifted, from logical clauses to English sentences, a failure message would be like this:
+      The verifier chain underneath is the same Python code; only the format of its failure messages has shifted, from logical clauses to English sentences. A typical failure message looks like this:
     </p>
 
     <blockquote>
@@ -435,21 +427,17 @@ while solver.check() == sat:
     </blockquote>
 
     <p>
-      In this way, the memory we previously introduces now coinsides with the recent usage of memory to refer to the LLM's context/history prompt. As now the entire sessions' text, the enlarged prompt, is the memory.
+      In this way, the memory we introduced earlier now coincides with the current usage of the word to refer to the LLM's context/history prompt: the entire session's text, the enlarged prompt, is the memory.
 
-      Although we can find that, unsurprisingly, such memory update mechanism is not really needed.
-
-      With the prompt containing the geometric information, <code>pyramid_10</code> can be solved in one-shot: the model applies its "bottom first" prior and returns a feasible plan in a single round.
+      Although, unsurprisingly, such a memory-update mechanism turns out not to be really needed here. With the prompt containing the geometric information, <code>pyramid_10</code> is solved one-shot: the model applies its "bottom first" prior and returns a feasible plan in a single round.
     </p>
 
     <p>
-      We can do another experiment that just gives the LLM a prompt that has no such geometric description, we can see that
-      it falls back almost like the previously tested simple random agent and Z3.
+      In another experiment we give the LLM a prompt with no geometric description, and we see that it behaves much like the simple random agent and Z3.
 
-      We deliberately isolate the geometric descriptions and give it a plain prompt, now contains only the adjacency graph, with block ids randomly permuted to avoid any leakage of hints. In this way, the LLM would now degrade to random proposals, learning these blackbox world verifier and would need multiple round to solve it.
+      We deliberately strip out the geometric information and give it a plain prompt containing only the adjacency graph, with block ids randomly permuted to avoid any leakage of hints. The LLM then degrades to random proposals, learning only from the blackbox verifier, and needs multiple rounds to solve the task.
     </p>
 
-    // NOTE for the entire of this below prompt, make it in margin note. And 
     <blockquote>
       <p>Blocks (id, contact neighbours):<br/>
         id=2, neighbors=[0, 3, 5].<br/>
@@ -464,7 +452,7 @@ while solver.check() == sat:
     <h3>Show it a picture! with a VLM</h3>
 
     <p>
-      Writing geometry down as text perhaps is not a good idea, we can use an image diretly.
+      Writing geometry down as text is perhaps not a good idea; we can use an image directly.
       Here we render the target design to a labelled PNG with all the block IDs, and then hand it to a VLM with the same <code>submit_plan</code> tool and the following prompt
     </p>
 
@@ -491,15 +479,15 @@ while solver.check() == sat:
     <p>
       With a Vision-Language Model (VLM)<label for="sn-kimi" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-kimi" class="margin-toggle"/>
-      <span class="sidenote">We used <code>kimi-k2p5</code> via Fireworks API, this is like less than 0.01$.</span>
-      playing as the agent, <code>pyramid_10</code> are unsurprisingly solved in one shot. The VLM does not need to be told with anything extra, it can simply see everything.
+      <span class="sidenote">We used <code>kimi-k2p5</code> via the Fireworks API; the call costs well under $0.01.</span>
+      playing as the agent, <code>pyramid_10</code> is unsurprisingly solved in one shot. The VLM does not need to be told anything extra — it can simply see everything.
     </p>
 
-    <h3>Comparision</h3>
+    <h3>Comparison</h3>
 
     <p>
       They say no blog should finish without a plot.
-      So here it is showing the five methods we explained so far, working with the same loop, the same enviroment.
+      So here it is showing the five methods we explained so far, working with the same loop, the same environment.
       The metric is <em>best-so-far block similarity</em>: the fraction of blocks the agent has ever successfully placed before a verifier failure. A score of 1.0 means a fully feasible plan.
     </p>
 
@@ -520,7 +508,7 @@ while solver.check() == sat:
     <h2>Discussion</h2>
 
     <p>
-      The two approches of symbolic and neural approaches are mirror images of each other. Symbolic synthesis encodes the problem into a formalism cut off from the world and runs a solver that manipulates only symbols. Neural synthesis hands it to a model that already carries rich priors about the world, in whichever modality (text, images). Their strengths and weaknesses are the same fact read from opposite sides.
+      The symbolic and neural approaches are mirror images of each other. Symbolic synthesis encodes the problem into a formalism cut off from the world and runs a solver that manipulates only symbols. Neural synthesis hands it to a model that already carries rich priors about the world, in whichever modality (text, images). Their strengths and weaknesses are the same fact read from opposite sides.
     </p>
 
     <figure>
@@ -533,13 +521,13 @@ while solver.check() == sat:
     </figure>
 
     <p>
-      Symbolic synthesis is <em>powerful because it knows nothing</em>: its algorithm is agnostic to real world, and that is what lets the same backend solve pyramids, recipes, course scheduling, circuit verification, python package dependency resolution tasks alike, so efficient, so reliable, and so trustworthy. Neural synthesis is <em>powerful because it tries to  know a great deal</em>: the priors a foundation model has internalised from terabytes of writing, code, images, videos are exactly what a SAT solver cannot have, and making it so good at guessing.
+      Symbolic synthesis is <em>powerful because it knows nothing</em>: its algorithm is agnostic to the real world, and that is what lets the same backend solve pyramids, recipes, course scheduling, circuit verification, and Python package dependency resolution alike — efficiently, reliably, and trustworthily. Neural synthesis is <em>powerful because it tries to know a great deal</em>: the priors a foundation model has internalised from terabytes of writing, code, images, and videos are exactly what a SAT solver cannot have, and that is what makes it so good at guessing.
     </p>
 
     <h3>Cost and speed</h3>
 
     <p>
-      For this toy task, the mirror shows up in cycles and dollars too. Symbolic agents are local CPU work — a handful of (incremental) Z3 queries, finishing in a fraction of a second on a laptop, with all the cost sitting up-front in a few minuts of human labor spent on the encoding. Neural agents, on the other hand, push a few thousand tokens through a frontier model per round.
+      For this toy task, the mirror shows up in cycles and dollars too. Symbolic agents are local CPU work — a handful of (incremental) Z3 queries, finishing in a fraction of a second on a laptop, with all the cost sitting up-front in a few minutes of human labor spent on the encoding. Neural agents, on the other hand, push a few thousand tokens through a frontier model per round.
     </p>
 
     <figure>
@@ -555,31 +543,27 @@ while solver.check() == sat:
       <label for="mn-bars-time" class="margin-toggle">&#8853;</label>
       <input type="checkbox" id="mn-bars-time" class="margin-toggle"/>
       <span class="marginnote">
-        Wall-clock time as measure from my laptop. Z3 and random run locally; LLM and VLM include round-trip latency to Fireworks API.
+        Wall-clock time as measured on my laptop. Z3 and random run locally; LLM and VLM include round-trip latency to the Fireworks API.
       </span>
       <div id="bars-time" style="width:100%; max-width:760px; margin:0 auto;"></div>
     </figure>
 
     <p>
-      Aside from wall time from my laptop, we can have a very rough estimation of computation.
+      Beyond wall time on my laptop, we can give a very rough estimate of the compute.
       A successful LLM or VLM run on <code>pyramid_10</code> costs around \(10^{14}\) FLOPs and roughly one US cent in API fees. The symbolic route is effectively free at runtime and expensive at design time; the neural route is the opposite.
       <label for="sn-flops" class="margin-toggle sidenote-number"></label>
       <input type="checkbox" id="sn-flops" class="margin-toggle"/>
       <span class="sidenote">Very rough estimation. The LLM model we use, DeepSeek-V3p1, activates roughly 37B parameters per token; a successful run on the geometric prompt spends a few thousand tokens, giving \(\sim 2 \times 37\mathrm{B} \times 3\mathrm{K} \approx 2 \times 10^{14}\) FLOPs. Kimi-K2p5 is in the same ballpark. I am not good at these estimations, so my formula might be wrong.</span>
     </p>
 
-    <h3>Ending worlds</h3>
+    <h3>Closing words</h3>
 
     <p>
-      Neither paradigm has to win. And in fact, what we want that can actually make a difference, perhaps is something between.
-      We want methods that have reasonable prior about the real world, meanwhile we also want methods can solve complicated problems (thousands, millions of contraints) reliably. The simple <code>pyramid-10</code> task might give reader a false
-      impression that the LLM/VLM is a clear win; but that is not true.
-      LLM/VLM would suffer hugely when we have a much larger problem that is industrial level.
-      I think we will need the LLM/VLM to understand the error (stored as plain text, or in any other format) so that
-      we can have more freedom is designing the feedback we can get from the enviroment, and then we shall also
-      enable them with the right harness/scaffolding that it can know when to rely on its internal knowledge to make
-      quick decisions, or to invoke a more reliable tool and delegate that real complicated planning to the right tool.
-      In this way we can probably has the best outcome.
+      Neither paradigm has to win. In fact, what can actually make a difference is perhaps something in between. We want methods that carry a reasonable prior about the real world, and we also want methods that can solve complicated problems (thousands, millions of constraints) reliably. The simple <code>pyramid-10</code> task might give the reader a false impression that the LLM/VLM is a clear win; it is not. LLM/VLM agents would suffer hugely on a much larger, industrial-scale problem.
+    </p>
+
+    <p>
+      I think we will want the LLM/VLM to understand the error (stored as plain text, or in any other format), so that we have more freedom in designing the feedback we get from the environment. We should also equip them with the right harness/scaffolding so that the agent knows when to rely on its internal knowledge for a quick decision, and when to invoke a more reliable tool and delegate the heavy-lifting planning to it. In this way we can probably get the best outcome.
     </p>
 
   </section>
